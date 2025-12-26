@@ -1,0 +1,16 @@
+---
+import type { Route } from "../lib/routes"
+
+const { routes } = Astro.props
+---
+
+<ul>
+  {routes.map((route: Route) => (
+    <li>
+      <strong>所要 {route.totalTimeMin}分</strong><br />
+      料金：¥{route.fare}<br />
+      乗換：{route.transfers}回<br />
+      <button>この経路を選ぶ</button>
+    </li>
+  ))}
+</ul>
