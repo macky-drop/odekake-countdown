@@ -1,0 +1,27 @@
+<div id="countdown">
+  <p>出発時刻</p>
+  <h2 id="departure">08:15</h2>
+  <p>残り時間</p>
+  <h3 id="remaining">--:--</h3>
+</div>
+
+<script>
+  const departure = "08:15"
+
+  function update() {
+    const now = new Date()
+    const [h, m] = departure.split(":").map(Number)
+    const target = new Date()
+    target.setHours(h, m, 0)
+
+    const diff = target.getTime() - now.getTime()
+    if (diff <= 0) return
+
+    const min = Math.floor(diff / 60000)
+    const sec = Math.floor((diff % 60000) / 1000)
+    document.getElementById("remaining").textContent =
+      `${min}分 ${sec}秒`
+  }
+
+  setInterval(update, 1000)
+</script>
