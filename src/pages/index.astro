@@ -1,11 +1,268 @@
 ---
-import Welcome from '../components/Welcome.astro';
+// src/pages/index.astro
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Navigation from '../components/Navigation.astro';
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="おでかけカウントダウン - チャット">
+  <div class="chat-container">
+    <header class="chat-header">
+      <h1>🚀 おでかけプランナー</h1>
+      <p>どこへ、いつ到着したいですか?</p>
+    </header>
+
+    <div class="messages-container" id="messagesContainer">
+      <div class="message bot-message">
+        <div class="avatar">🤖</div>
+        <div class="bubble">
+          こんにちは!おでかけのお手伝いをします。<br>
+          目的地と到着時間を教えてください。<br><br>
+          例: 「渋谷駅に10時に着きたい」
+        </div>
+      </div>
+    </div>
+
+    <div class="input-container">
+      <div class="quick-actions">
+        <button class="quick-btn" data-action="current-location">
+          📍 現在地から
+        </button>
+        <button class="quick-btn" data-action="favorites">
+          ⭐ お気に入り
+        </button>
+      </div>
+      
+      <div class="input-wrapper">
+        <input 
+          type="text" 
+          id="messageInput" 
+          class="message-input" 
+          placeholder="メッセージを入力..."
+          autocomplete="off"
+        />
+        <button id="sendBtn" class="send-btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <Navigation />
+</Layout>
+
+<style>
+  .chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--background);
+  }
+
+  .chat-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .chat-header h1 {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+
+  .chat-header p {
+    font-size: 14px;
+    opacity: 0.9;
+  }
+
+  .messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .message {
+    display: flex;
+    gap: 12px;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .user-message {
+    flex-direction: row-reverse;
+  }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .bubble {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    line-height: 1.5;
+  }
+
+  .bot-message .bubble {
+    background: var(--surface);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .user-message .bubble {
+    background: var(--primary);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+
+  .input-container {
+    padding: 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding-bottom: 80px;
+  }
+
+  .quick-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .quick-btn {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+
+  .quick-btn:hover {
+    background: var(--border);
+  }
+
+  .input-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .message-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid var(--border);
+    border-radius: 24px;
+    font-size: 16px;
+    transition: border-color 0.2s;
+  }
+
+  .message-input:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  .send-btn {
+    width: 48px;
+    height: 48px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .send-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.05);
+  }
+
+  .send-btn:active {
+    transform: scale(0.95);
+  }
+</style>
+
+<script>
+  const messagesContainer = document.getElementById('messagesContainer');
+  const messageInput = document.getElementById('messageInput') as HTMLInputElement;
+  const sendBtn = document.getElementById('sendBtn');
+
+  function addMessage(text: string, isUser: boolean) {
+    const message = document.createElement('div');
+    message.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+    
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = isUser ? '👤' : '🤖';
+    
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    
+    message.appendChild(avatar);
+    message.appendChild(bubble);
+    messagesContainer?.appendChild(message);
+    messagesContainer?.scrollTo(0, messagesContainer.scrollHeight);
+  }
+
+  function handleSend() {
+    const text = messageInput.value.trim();
+    if (!text) return;
+
+    addMessage(text, true);
+    messageInput.value = '';
+
+    // シミュレート応答
+    setTimeout(() => {
+      addMessage('経路を検索しています...', false);
+      setTimeout(() => {
+        window.location.href = '/routes';
+      }, 1000);
+    }, 500);
+  }
+
+  sendBtn?.addEventListener('click', handleSend);
+  messageInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleSend();
+  });
+
+  // クイックアクション
+  document.querySelectorAll('.quick-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const action = (e.currentTarget as HTMLElement).dataset.action;
+      if (action === 'current-location') {
+        addMessage('現在地から検索します', true);
+        setTimeout(() => {
+          addMessage('現在地を取得しました。目的地を教えてください。', false);
+        }, 500);
+      }
+    });
+  });
+</script>
 </Layout>
