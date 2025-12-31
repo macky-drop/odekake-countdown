@@ -1,0 +1,428 @@
+---
+// src/pages/settings.astro
+import Layout from '../layouts/Layout.astro';
+import Navigation from '../components/Navigation.astro';
+import { mockAlarmPresets } from '../data/mockRoutes';
+---
+
+<Layout title="設定">
+  <div class="settings-container">
+    <header class="settings-header">
+      <h1>⚙️ 設定</h1>
+    </header>
+
+    <div class="container">
+      <!-- お気に入り登録 -->
+      <section class="settings-section">
+        <h2 class="section-title">⭐ お気に入り</h2>
+        <div class="card">
+          <div class="favorite-list">
+            <div class="favorite-item">
+              <div class="favorite-info">
+                <div class="favorite-name">渋谷駅</div>
+                <div class="favorite-detail">よく行く場所</div>
+              </div>
+              <button class="icon-btn delete-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="favorite-item">
+              <div class="favorite-info">
+                <div class="favorite-name">横浜駅</div>
+                <div class="favorite-detail">通勤先</div>
+              </div>
+              <button class="icon-btn delete-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button class="btn btn-outline full-width" id="addFavorite">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            お気に入りを追加
+          </button>
+        </div>
+      </section>
+
+      <!-- 目覚まし時計 -->
+      <section class="settings-section">
+        <h2 class="section-title">⏰ 目覚まし時計</h2>
+        <div class="card">
+          {mockAlarmPresets.map(preset => (
+            <div class="alarm-item">
+              <div class="alarm-info">
+                <div class="alarm-time">{preset.time}</div>
+                <div class="alarm-days">
+                  {preset.days.includes(1) && preset.days.includes(5) ? '平日' : 
+                   preset.days.includes(0) && preset.days.includes(6) ? '週末' : 
+                   '毎日'}
+                </div>
+                {preset.label && <div class="alarm-label">{preset.label}</div>}
+              </div>
+              <label class="switch">
+                <input type="checkbox" checked={preset.enabled} />
+                <span class="slider"></span>
+              </label>
+            </div>
+          ))}
+          <button class="btn btn-outline full-width" id="addAlarm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            アラームを追加
+          </button>
+        </div>
+      </section>
+
+      <!-- 通知設定 -->
+      <section class="settings-section">
+        <h2 class="section-title">🔔 通知設定</h2>
+        <div class="card">
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-name">出発60分前</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-name">出発30分前</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-name">出発10分前</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-name">出発5分前</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- その他の設定 -->
+      <section class="settings-section">
+        <h2 class="section-title">🛠️ その他</h2>
+        <div class="card">
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-name">歩行速度</div>
+              <div class="setting-detail">徒歩時間の計算に使用</div>
+            </div>
+            <select class="select-field">
+              <option>遅い (3km/h)</option>
+              <option selected>普通 (4km/h)</option>
+              <option>速い (5km/h)</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-name">アラーム音</div>
+              <div class="setting-detail">出発時に再生する音</div>
+            </div>
+            <button class="btn btn-outline">選択</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- アプリ情報 -->
+      <section class="settings-section">
+        <div class="card">
+          <div class="app-info">
+            <div class="app-icon">🚀</div>
+            <div class="app-details">
+              <div class="app-name">おでかけカウントダウン</div>
+              <div class="app-version">Version 1.0.0</div>
+            </div>
+          </div>
+          <div class="info-links">
+            <a href="#" class="info-link">利用規約</a>
+            <a href="#" class="info-link">プライバシーポリシー</a>
+            <a href="#" class="info-link">お問い合わせ</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <Navigation />
+</Layout>
+
+<style>
+  .settings-container {
+    min-height: 100vh;
+    background: var(--background);
+  }
+
+  .settings-header {
+    background: var(--surface);
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .settings-header h1 {
+    font-size: 24px;
+    text-align: center;
+  }
+
+  .settings-section {
+    margin: 24px 0;
+  }
+
+  .section-title {
+    font-size: 18px;
+    margin-bottom: 12px;
+    padding: 0 4px;
+  }
+
+  .favorite-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .favorite-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--background);
+    border-radius: 8px;
+  }
+
+  .favorite-info {
+    flex: 1;
+  }
+
+  .favorite-name {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 2px;
+  }
+
+  .favorite-detail {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .icon-btn {
+    padding: 8px;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+  }
+
+  .icon-btn:hover {
+    color: var(--error);
+  }
+
+  .alarm-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .alarm-item:last-of-type {
+    border-bottom: none;
+  }
+
+  .alarm-info {
+    flex: 1;
+  }
+
+  .alarm-time {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .alarm-days {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+  }
+
+  .alarm-label {
+    font-size: 13px;
+    color: var(--primary);
+    font-weight: 500;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border);
+    transition: 0.3s;
+    border-radius: 28px;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+  }
+
+  input:checked + .slider {
+    background-color: var(--primary);
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(22px);
+  }
+
+  .setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .setting-item:last-child {
+    border-bottom: none;
+  }
+
+  .setting-info {
+    flex: 1;
+  }
+
+  .setting-name {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 2px;
+  }
+
+  .setting-detail {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .select-field {
+    padding: 8px 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .full-width {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .app-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-icon {
+    font-size: 48px;
+  }
+
+  .app-details {
+    flex: 1;
+  }
+
+  .app-name {
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+
+  .app-version {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .info-links {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+  }
+
+  .info-link {
+    padding: 12px;
+    color: var(--text-primary);
+    font-size: 15px;
+    transition: color 0.2s;
+  }
+
+  .info-link:hover {
+    color: var(--primary);
+  }
+
+  @media (max-width: 480px) {
+    .alarm-time {
+      font-size: 24px;
+    }
+  }
+</style>
+
+<script>
+  document.getElementById('addFavorite')?.addEventListener('click', () => {
+    alert('お気に入り追加機能（チャットから追加可能）');
+  });
+
+  document.getElementById('addAlarm')?.addEventListener('click', () => {
+    alert('アラーム追加機能');
+  });
+</script>
+</Layout>
