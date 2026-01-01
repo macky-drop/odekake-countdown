@@ -41,19 +41,23 @@ const title = "ルート検索結果";
         margin: 0 auto;
       }
 
-      .routes-header {
+      .search-panel {
         background: var(--surface);
         padding: 16px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         position: sticky;
         top: 0;
         z-index: 10;
       }
 
-      .back-btn, .edit-btn {
+      .search-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .back-btn {
         padding: 8px;
         background: none;
         border: none;
@@ -61,18 +65,115 @@ const title = "ルート検索結果";
         color: var(--text-primary);
       }
 
-      .header-info {
+      .search-header h1 {
+        font-size: 20px;
         flex: 1;
       }
 
-      .header-info h1 {
-        font-size: 20px;
-        margin-bottom: 2px;
+      .search-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
       }
 
-      .header-info p {
-        font-size: 14px;
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .input-group label {
+        font-size: 12px;
         color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .location-input-wrapper {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .location-input {
+        flex: 1;
+        padding: 12px;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+      }
+
+      .location-input:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      .gps-btn {
+        padding: 12px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .gps-btn:disabled {
+        background: var(--border);
+        cursor: not-allowed;
+      }
+
+      .time-controls {
+        display: flex;
+        gap: 8px;
+      }
+
+      .time-type-btn {
+        flex: 1;
+        padding: 8px;
+        background: var(--background);
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .time-type-btn.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+      }
+
+      .time-input {
+        padding: 12px;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+      }
+
+      .search-btn {
+        padding: 14px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .search-btn:hover {
+        background: var(--primary-dark);
+      }
+
+      .search-btn:disabled {
+        background: var(--border);
+        cursor: not-allowed;
       }
 
       .filters {
@@ -105,6 +206,20 @@ const title = "ルート検索結果";
       .routes-list {
         padding: 16px;
         padding-bottom: 100px;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+      }
+
+      .error-message {
+        background: #FFEBEE;
+        color: #C62828;
+        padding: 16px;
+        border-radius: 8px;
+        margin: 16px;
       }
 
       .route-card {
@@ -182,6 +297,12 @@ const title = "ルート検索結果";
         align-items: center;
         justify-content: center;
         font-size: 20px;
+        flex-shrink: 0;
+      }
+
+      .line-info {
+        flex: 1;
+        min-width: 0;
       }
 
       .line-name {
@@ -193,6 +314,9 @@ const title = "ルート検索結果";
       .stations {
         font-size: 13px;
         color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .transit-time {
@@ -259,239 +383,94 @@ const title = "ルート検索結果";
         font-size: 12px;
         font-weight: 500;
       }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-secondary);
+      }
+
+      .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+      }
     </style>
   </head>
   <body>
     <div class="routes-container">
-      <header class="routes-header">
-        <button class="back-btn" onclick="history.back()">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-          </svg>
-        </button>
-        <div class="header-info">
-          <h1>渋谷駅</h1>
-          <p>10:00到着</p>
+      <div class="search-panel">
+        <div class="search-header">
+          <button class="back-btn" onclick="history.back()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <h1>ルート検索</h1>
         </div>
-        <button class="edit-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-          </svg>
-        </button>
-      </header>
 
-      <div class="filters">
-        <button class="filter-btn active">すべて</button>
-        <button class="filter-btn">最速</button>
-        <button class="filter-btn">最安</button>
-        <button class="filter-btn">乗換少</button>
+        <form class="search-form" id="searchForm">
+          <div class="input-group">
+            <label>出発地</label>
+            <div class="location-input-wrapper">
+              <input 
+                type="text" 
+                class="location-input" 
+                id="originInput"
+                placeholder="現在地、駅名、ランドマーク"
+                required
+              />
+              <button type="button" class="gps-btn" id="gpsBtn" title="現在地を取得">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>目的地</label>
+            <input 
+              type="text" 
+              class="location-input" 
+              id="destinationInput"
+              placeholder="駅名、ランドマーク"
+              required
+            />
+          </div>
+
+          <div class="input-group">
+            <label>時刻指定</label>
+            <div class="time-controls">
+              <button type="button" class="time-type-btn active" data-type="departure">出発</button>
+              <button type="button" class="time-type-btn" data-type="arrival">到着</button>
+            </div>
+            <input 
+              type="datetime-local" 
+              class="time-input" 
+              id="timeInput"
+              required
+            />
+          </div>
+
+          <button type="submit" class="search-btn" id="searchBtn">
+            🔍 ルートを検索
+          </button>
+        </form>
       </div>
 
-      <div class="routes-list">
-        <!-- ルート1: 最速 -->
-        <div class="route-card">
-          <div class="route-header">
-            <span class="priority-badge" style="background-color: #4CAF50">最速</span>
-            <div class="route-info">
-              <span class="duration">45分</span>
-              <span>¥320</span>
-              <span>乗換1回</span>
-            </div>
-          </div>
+      <div class="filters" id="filters" style="display: none;">
+        <button class="filter-btn active" data-priority="all">すべて</button>
+        <button class="filter-btn" data-priority="fastest">最速</button>
+        <button class="filter-btn" data-priority="cheapest">最安</button>
+        <button class="filter-btn" data-priority="fewest_transfers">乗換少</button>
+      </div>
 
-          <div class="route-segments">
-            <div class="segment">
-              <div class="segment-walk">
-                <span>🚶</span>
-                <span>徒歩 8分</span>
-                <span style="font-size: 12px">自宅 → 横浜駅</span>
-              </div>
-            </div>
-
-            <div class="segment">
-              <div class="segment-transit">
-                <div class="transit-line">
-                  <div class="line-icon" style="background-color: #4CAF50">🚃</div>
-                  <div style="flex: 1">
-                    <div class="line-name">JR東海道線</div>
-                    <div class="stations">横浜駅 → 品川駅</div>
-                  </div>
-                </div>
-                <div class="transit-time">
-                  <span class="time">09:15</span>
-                  <span>→</span>
-                  <span class="time">09:33</span>
-                  <span style="font-size: 12px">(18分)</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="segment">
-              <div class="segment-transit">
-                <div class="transit-line">
-                  <div class="line-icon" style="background-color: #4CAF50">🚃</div>
-                  <div style="flex: 1">
-                    <div class="line-name">JR山手線</div>
-                    <div class="stations">品川駅 → 渋谷駅</div>
-                  </div>
-                </div>
-                <div class="transit-time">
-                  <span class="time">09:38</span>
-                  <span>→</span>
-                  <span class="time">09:48</span>
-                  <span style="font-size: 12px">(10分)</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="segment">
-              <div class="segment-walk">
-                <span>🚶</span>
-                <span>徒歩 5分</span>
-                <span style="font-size: 12px">渋谷駅 → 目的地</span>
-              </div>
-            </div>
-          </div>
-
-          <button class="select-btn">このルートを選択</button>
-        </div>
-
-        <!-- ルート2: 最安 -->
-        <div class="route-card">
-          <div class="route-header">
-            <span class="priority-badge" style="background-color: #2196F3">最安</span>
-            <div class="route-info">
-              <span class="duration">52分</span>
-              <span>¥280</span>
-              <span>乗換2回</span>
-            </div>
-          </div>
-
-          <div class="route-segments">
-            <div class="segment">
-              <div class="segment-walk">
-                <span>🚶</span>
-                <span>徒歩 8分</span>
-                <span style="font-size: 12px">自宅 → 横浜駅</span>
-              </div>
-            </div>
-
-            <div class="segment">
-              <div class="segment-transit">
-                <div class="transit-line">
-                  <div class="line-icon" style="background-color: #4CAF50">🚃</div>
-                  <div style="flex: 1">
-                    <div class="line-name">JR京浜東北線</div>
-                    <div class="stations">横浜駅 → 川崎駅</div>
-                  </div>
-                </div>
-                <div class="transit-time">
-                  <span class="time">09:12</span>
-                  <span>→</span>
-                  <span class="time">09:23</span>
-                  <span style="font-size: 12px">(11分)</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="segment">
-              <div class="segment-transit">
-                <div class="transit-line">
-                  <div class="line-icon" style="background-color: #4CAF50">🚃</div>
-                  <div style="flex: 1">
-                    <div class="line-name">京急本線</div>
-                    <div class="stations">川崎駅 → 品川駅</div>
-                  </div>
-                </div>
-                <div class="transit-time">
-                  <span class="time">09:28</span>
-                  <span>→</span>
-                  <span class="time">09:40</span>
-                  <span style="font-size: 12px">(12分)</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="segment">
-              <div class="segment-transit">
-                <div class="transit-line">
-                  <div class="line-icon" style="background-color: #4CAF50">🚃</div>
-                  <div style="flex: 1">
-                    <div class="line-name">JR山手線</div>
-                    <div class="stations">品川駅 → 渋谷駅</div>
-                  </div>
-                </div>
-                <div class="transit-time">
-                  <span class="time">09:45</span>
-                  <span>→</span>
-                  <span class="time">09:55</span>
-                  <span style="font-size: 12px">(10分)</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="segment">
-              <div class="segment-walk">
-                <span>🚶</span>
-                <span>徒歩 5分</span>
-                <span style="font-size: 12px">渋谷駅 → 目的地</span>
-              </div>
-            </div>
-          </div>
-
-          <button class="select-btn">このルートを選択</button>
-        </div>
-
-        <!-- ルート3: 乗換少 -->
-        <div class="route-card">
-          <div class="route-header">
-            <span class="priority-badge" style="background-color: #FF9800">乗換少</span>
-            <div class="route-info">
-              <span class="duration">58分</span>
-              <span>¥350</span>
-              <span>乗換0回</span>
-            </div>
-          </div>
-
-          <div class="route-segments">
-            <div class="segment">
-              <div class="segment-walk">
-                <span>🚶</span>
-                <span>徒歩 8分</span>
-                <span style="font-size: 12px">自宅 → 横浜駅</span>
-              </div>
-            </div>
-
-            <div class="segment">
-              <div class="segment-transit">
-                <div class="transit-line">
-                  <div class="line-icon" style="background-color: #4CAF50">🚃</div>
-                  <div style="flex: 1">
-                    <div class="line-name">湘南新宿ライン</div>
-                    <div class="stations">横浜駅 → 渋谷駅</div>
-                  </div>
-                </div>
-                <div class="transit-time">
-                  <span class="time">09:10</span>
-                  <span>→</span>
-                  <span class="time">09:42</span>
-                  <span style="font-size: 12px">(32分)</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="segment">
-              <div class="segment-walk">
-                <span>🚶</span>
-                <span>徒歩 5分</span>
-                <span style="font-size: 12px">渋谷駅 → 目的地</span>
-              </div>
-            </div>
-          </div>
-
-          <button class="select-btn">このルートを選択</button>
+      <div class="routes-list" id="routesList">
+        <div class="empty-state">
+          <div class="empty-state-icon">🚉</div>
+          <p>出発地と目的地を入力して<br>ルートを検索してください</p>
         </div>
       </div>
     </div>
@@ -530,20 +509,258 @@ const title = "ルート検索結果";
     </nav>
 
     <script>
-      const filterBtns = document.querySelectorAll('.filter-btn');
-      
-      filterBtns.forEach(btn => {
+      let currentTimeType = 'departure';
+      let allRoutes = {};
+      let currentUserLocation = null;
+
+      // 初期時刻設定
+      const now = new Date();
+      now.setMinutes(now.getMinutes() + 30);
+      document.getElementById('timeInput').value = now.toISOString().slice(0, 16);
+
+      // 時刻タイプ切り替え
+      document.querySelectorAll('.time-type-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          filterBtns.forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.time-type-btn').forEach(b => b.classList.remove('active'));
           e.currentTarget.classList.add('active');
+          currentTimeType = e.currentTarget.dataset.type;
         });
       });
 
-      document.querySelectorAll('.select-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          window.location.href = '/countdown';
+      // GPS取得
+      document.getElementById('gpsBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('gpsBtn');
+        btn.disabled = true;
+        
+        if (!navigator.geolocation) {
+          alert('お使いのブラウザは位置情報に対応していません');
+          btn.disabled = false;
+          return;
+        }
+
+        try {
+          const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject);
+          });
+
+          currentUserLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+
+          document.getElementById('originInput').value = '現在地';
+          alert('現在地を取得しました');
+        } catch (error) {
+          alert('位置情報の取得に失敗しました: ' + error.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      // ルート検索
+      document.getElementById('searchForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await searchRoutes('all');
+      });
+
+      async function searchRoutes(priority) {
+        const originInput = document.getElementById('originInput').value;
+        const destination = document.getElementById('destinationInput').value;
+        const timeValue = document.getElementById('timeInput').value;
+
+        if (!originInput || !destination || !timeValue) {
+          alert('すべての項目を入力してください');
+          return;
+        }
+
+        // 出発地の処理(現在地の場合は座標を使用)
+        const origin = originInput === '現在地' && currentUserLocation
+          ? `${currentUserLocation.lat},${currentUserLocation.lng}`
+          : originInput;
+
+        const searchBtn = document.getElementById('searchBtn');
+        const routesList = document.getElementById('routesList');
+        const filters = document.getElementById('filters');
+
+        searchBtn.disabled = true;
+        searchBtn.textContent = '検索中...';
+        routesList.innerHTML = '<div class="loading">🔍 ルートを検索しています...</div>';
+
+        try {
+          // キャッシュキーの生成
+          const cacheKey = `routes_${origin}_${destination}_${timeValue}_${priority}`;
+          const cached = localStorage.getItem(cacheKey);
+          
+          if (cached) {
+            const data = JSON.parse(cached);
+            displayRoutes(data.routes, priority);
+            filters.style.display = 'flex';
+            return;
+          }
+
+          // 優先順位ごとに検索
+          const priorities = priority === 'all' 
+            ? ['fastest', 'cheapest', 'fewest_transfers']
+            : [priority];
+
+          for (const p of priorities) {
+            const response = await fetch('/api/search-routes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                origin,
+                destination,
+                [currentTimeType === 'arrival' ? 'arrivalTime' : 'departureTime']: timeValue,
+                priority: p
+              })
+            });
+
+            if (!response.ok) {
+              throw new Error('検索に失敗しました');
+            }
+
+            const data = await response.json();
+            allRoutes[p] = data.routes;
+
+            // キャッシュに保存(30分)
+            const cacheData = {
+              routes: data.routes,
+              timestamp: Date.now(),
+              expiresIn: 30 * 60 * 1000
+            };
+            localStorage.setItem(`routes_${origin}_${destination}_${timeValue}_${p}`, JSON.stringify(cacheData));
+          }
+
+          displayRoutes(allRoutes[priorities[0]], priority);
+          filters.style.display = 'flex';
+
+        } catch (error) {
+          console.error('Search error:', error);
+          routesList.innerHTML = `
+            <div class="error-message">
+              ❌ ${error.message}
+              <br>もう一度お試しください。
+            </div>
+          `;
+        } finally {
+          searchBtn.disabled = false;
+          searchBtn.textContent = '🔍 ルートを検索';
+        }
+      }
+
+      function displayRoutes(routes, priority) {
+        const routesList = document.getElementById('routesList');
+        
+        if (!routes || routes.length === 0) {
+          routesList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">😔</div><p>ルートが見つかりませんでした</p></div>';
+          return;
+        }
+
+        const priorityLabels = {
+          fastest: { text: '最速', color: '#4CAF50' },
+          cheapest: { text: '最安', color: '#2196F3' },
+          fewest_transfers: { text: '乗換少', color: '#FF9800' }
+        };
+
+        routesList.innerHTML = routes.map((route, index) => {
+          const badge = priorityLabels[priority] || priorityLabels.fastest;
+          
+          return `
+            <div class="route-card">
+              <div class="route-header">
+                <span class="priority-badge" style="background-color: ${badge.color}">${badge.text}</span>
+                <div class="route-info">
+                  <span class="duration">${route.durationText}</span>
+                  <span>${route.fare ? route.fare.text : '料金不明'}</span>
+                  <span>乗換${route.transfers}回</span>
+                </div>
+              </div>
+
+              <div class="route-segments">
+                ${route.segments.map(segment => {
+                  if (segment.type === 'walk') {
+                    return `
+                      <div class="segment">
+                        <div class="segment-walk">
+                          <span>🚶</span>
+                          <span>${segment.durationText}</span>
+                          <span style="font-size: 12px">${segment.instructions}</span>
+                        </div>
+                      </div>
+                    `;
+                  } else if (segment.type === 'transit') {
+                    const vehicleIcon = segment.line.vehicle === 'BUS' ? '🚌' : '🚃';
+                    return `
+                      <div class="segment">
+                        <div class="segment-transit">
+                          <div class="transit-line">
+                            <div class="line-icon" style="background-color: ${segment.line.color}; color: ${segment.line.textColor}">
+                              ${vehicleIcon}
+                            </div>
+                            <div class="line-info">
+                              <div class="line-name">${segment.line.name}</div>
+                              <div class="stations">${segment.departure.name} → ${segment.arrival.name}</div>
+                            </div>
+                          </div>
+                          <div class="transit-time">
+                            <span class="time">${segment.departure.time}</span>
+                            <span>→</span>
+                            <span class="time">${segment.arrival.time}</span>
+                            <span style="font-size: 12px">(${segment.durationText})</span>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                  }
+                  return '';
+                }).join('')}
+              </div>
+
+              <button class="select-btn" onclick="selectRoute('${route.id}')">
+                このルートを選択
+              </button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // フィルター切り替え
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          e.currentTarget.classList.add('active');
+          const priority = e.currentTarget.dataset.priority;
+          
+          if (priority === 'all') {
+            searchRoutes('fastest');
+          } else {
+            displayRoutes(allRoutes[priority] || [], priority);
+          }
         });
       });
+
+      function selectRoute(routeId) {
+        localStorage.setItem('selectedRoute', routeId);
+        window.location.href = '/countdown';
+      }
+
+      // キャッシュクリーンアップ(起動時)
+      function cleanupCache() {
+        const keys = Object.keys(localStorage);
+        const now = Date.now();
+        keys.forEach(key => {
+          if (key.startsWith('routes_')) {
+            try {
+              const data = JSON.parse(localStorage.getItem(key));
+              if (data.timestamp + data.expiresIn < now) {
+                localStorage.removeItem(key);
+              }
+            } catch (e) {}
+          }
+        });
+      }
+
+      cleanupCache();
     </script>
   </body>
 </html>
