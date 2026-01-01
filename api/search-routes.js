@@ -1,7 +1,7 @@
 // api/search-routes.js
 // Vercel Serverless Function for route search
 
-const GOOGLE_MAPS_API_KEY = 'AIzaSyBxL_W0AqcoUWRoIF-vfjDxc-bo7qdVGmM';
+const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY_HERE'; // ここに実際のAPIキーを入力
 
 export default async function handler(req, res) {
   // CORSヘッダー設定
@@ -22,8 +22,18 @@ export default async function handler(req, res) {
   try {
     const { origin, destination, arrivalTime, departureTime, priority } = req.body;
 
+    console.log('Request received:', { origin, destination, arrivalTime, departureTime, priority });
+
     if (!origin || !destination) {
       return res.status(400).json({ error: '出発地と目的地は必須です' });
+    }
+
+    // APIキーのチェック
+    if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+      return res.status(500).json({ 
+        error: 'Google Maps APIキーが設定されていません',
+        details: 'api/search-routes.jsのGOOGLE_MAPS_API_KEYを設定してください' 
+      });
     }
 
     // Google Maps Directions APIのパラメータ設定
@@ -34,23 +44,28 @@ export default async function handler(req, res) {
       language: 'ja',
       region: 'JP',
       key: GOOGLE_MAPS_API_KEY,
-      alternatives: true, // 複数ルート取得
+      alternatives: true,
     };
 
     // 到着時刻または出発時刻の設定
     if (arrivalTime) {
-      baseParams.arrival_time = Math.floor(new Date(arrivalTime).getTime() / 1000);
+      const arrivalTimestamp = Math.floor(new Date(arrivalTime).getTime() / 1000);
+      baseParams.arrival_time = arrivalTimestamp;
+      console.log('Arrival time set:', arrivalTime, '→', arrivalTimestamp);
     } else if (departureTime) {
-      baseParams.departure_time = Math.floor(new Date(departureTime).getTime() / 1000);
+      const departureTimestamp = Math.floor(new Date(departureTime).getTime() / 1000);
+      baseParams.departure_time = departureTimestamp;
+      console.log('Departure time set:', departureTime, '→', departureTimestamp);
     } else {
       baseParams.departure_time = 'now';
+      console.log('Using current time');
     }
 
     // 優先順位に応じた設定
     const transitPreferences = {
-      fastest: 'fewer_transfers', // 最速(乗換少なめで速度優先)
-      cheapest: 'less_walking', // 最安(徒歩少なめ)
-      fewest_transfers: 'fewer_transfers', // 乗換少
+      fastest: 'fewer_transfers',
+      cheapest: 'less_walking',
+      fewest_transfers: 'fewer_transfers',
     };
 
     if (priority && transitPreferences[priority]) {
@@ -61,13 +76,30 @@ export default async function handler(req, res) {
     const params = new URLSearchParams(baseParams);
     const apiUrl = `https://maps.googleapis.com/maps/api/directions/json?${params}`;
 
+    console.log('Calling Google Maps API...');
     const response = await fetch(apiUrl);
     const data = await response.json();
 
+    console.log('API Response status:', data.status);
+
     if (data.status !== 'OK') {
+      console.error('API Error:', data);
       return res.status(400).json({ 
         error: 'ルート検索に失敗しました',
-        details: data.status 
+        status: data.status,
+        details: data.error_message || getStatusMessage(data.status),
+        debugInfo: {
+          origin,
+          destination,
+          apiUrl: apiUrl.replace(GOOGLE_MAPS_API_KEY, 'API_KEY_HIDDEN')
+        }
+      });
+    }
+
+    if (!data.routes || data.routes.length === 0) {
+      return res.status(404).json({
+        error: 'ルートが見つかりませんでした',
+        details: '出発地と目的地を確認してください'
       });
     }
 
@@ -76,7 +108,6 @@ export default async function handler(req, res) {
       const leg = route.legs[0];
       const steps = leg.steps;
 
-      // 料金情報の取得(存在する場合)
       let fare = null;
       if (leg.fare) {
         fare = {
@@ -86,11 +117,9 @@ export default async function handler(req, res) {
         };
       }
 
-      // 乗換回数の計算(transit stepの数 - 1)
       const transitSteps = steps.filter(step => step.travel_mode === 'TRANSIT');
       const transfers = Math.max(0, transitSteps.length - 1);
 
-      // セグメント情報の整形
       const segments = steps.map(step => {
         if (step.travel_mode === 'WALKING') {
           return {
@@ -171,9 +200,11 @@ export default async function handler(req, res) {
       });
     }
 
+    console.log(`Successfully processed ${sortedRoutes.length} routes`);
+
     res.status(200).json({
       success: true,
-      routes: sortedRoutes.slice(0, 4), // 最大4件
+      routes: sortedRoutes.slice(0, 4),
       origin: {
         address: leg.start_address,
         location: leg.start_location
@@ -188,7 +219,20 @@ export default async function handler(req, res) {
     console.error('Route search error:', error);
     res.status(500).json({ 
       error: 'サーバーエラーが発生しました',
-      details: error.message 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
+}
+
+function getStatusMessage(status) {
+  const messages = {
+    'ZERO_RESULTS': '指定された場所間のルートが見つかりませんでした',
+    'NOT_FOUND': '出発地または目的地が見つかりませんでした',
+    'INVALID_REQUEST': 'リクエストパラメータが不正です',
+    'REQUEST_DENIED': 'APIキーが無効、または権限がありません。Directions APIが有効か確認してください。',
+    'OVER_QUERY_LIMIT': 'APIの利用制限を超えました',
+    'UNKNOWN_ERROR': 'サーバーエラーが発生しました。しばらくしてから再試行してください。'
+  };
+  return messages[status] || `不明なエラー: ${status}`;
 }
