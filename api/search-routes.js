@@ -1,7 +1,7 @@
 // api/search-routes.js
 // Vercel Serverless Function for route search
 
-const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY_HERE'; // ここに実際のAPIキーを入力
+const GOOGLE_MAPS_API_KEY = 'AIzaSyBxL_W0AqcoUWRoIF-vfjDxc-bo7qdVGmM'; // ここに実際のAPIキーを入力
 
 export default async function handler(req, res) {
   // CORSヘッダー設定
