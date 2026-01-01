@@ -222,6 +222,15 @@ const title = "ルート検索結果";
         margin: 16px;
       }
 
+      .error-details {
+        margin-top: 8px;
+        font-size: 13px;
+        background: white;
+        padding: 8px;
+        border-radius: 4px;
+        color: #666;
+      }
+
       .route-card {
         background: var(--surface);
         border-radius: 12px;
@@ -573,7 +582,7 @@ const title = "ルート検索結果";
           return;
         }
 
-        // 出発地の処理(現在地の場合は座標を使用)
+        // 出発地の処理
         const origin = originInput === '現在地' && currentUserLocation
           ? `${currentUserLocation.lat},${currentUserLocation.lng}`
           : originInput;
@@ -587,48 +596,35 @@ const title = "ルート検索結果";
         routesList.innerHTML = '<div class="loading">🔍 ルートを検索しています...</div>';
 
         try {
-          // キャッシュキーの生成
-          const cacheKey = `routes_${origin}_${destination}_${timeValue}_${priority}`;
-          const cached = localStorage.getItem(cacheKey);
-          
-          if (cached) {
-            const data = JSON.parse(cached);
-            displayRoutes(data.routes, priority);
-            filters.style.display = 'flex';
-            return;
-          }
-
           // 優先順位ごとに検索
           const priorities = priority === 'all' 
             ? ['fastest', 'cheapest', 'fewest_transfers']
             : [priority];
 
           for (const p of priorities) {
+            const requestBody = {
+              origin,
+              destination,
+              [currentTimeType === 'arrival' ? 'arrivalTime' : 'departureTime']: timeValue,
+              priority: p
+            };
+
+            console.log('Sending request:', requestBody);
+
             const response = await fetch('/api/search-routes', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                origin,
-                destination,
-                [currentTimeType === 'arrival' ? 'arrivalTime' : 'departureTime']: timeValue,
-                priority: p
-              })
+              body: JSON.stringify(requestBody)
             });
 
+            const data = await response.json();
+            console.log('Response:', data);
+
             if (!response.ok) {
-              throw new Error('検索に失敗しました');
+              throw new Error(data.error + (data.details ? `\n詳細: ${data.details}` : '') + (data.status ? `\nステータス: ${data.status}` : ''));
             }
 
-            const data = await response.json();
             allRoutes[p] = data.routes;
-
-            // キャッシュに保存(30分)
-            const cacheData = {
-              routes: data.routes,
-              timestamp: Date.now(),
-              expiresIn: 30 * 60 * 1000
-            };
-            localStorage.setItem(`routes_${origin}_${destination}_${timeValue}_${p}`, JSON.stringify(cacheData));
           }
 
           displayRoutes(allRoutes[priorities[0]], priority);
@@ -638,8 +634,10 @@ const title = "ルート検索結果";
           console.error('Search error:', error);
           routesList.innerHTML = `
             <div class="error-message">
-              ❌ ${error.message}
-              <br>もう一度お試しください。
+              ❌ ${error.message.split('\n')[0]}
+              ${error.message.split('\n').slice(1).length > 0 ? 
+                `<div class="error-details">${error.message.split('\n').slice(1).join('<br>')}</div>` 
+                : ''}
             </div>
           `;
         } finally {
@@ -652,7 +650,7 @@ const title = "ルート検索結果";
         const routesList = document.getElementById('routesList');
         
         if (!routes || routes.length === 0) {
-          routesList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">😔</div><p>ルートが見つかりませんでした</p></div>';
+          routesList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">😕</div><p>ルートが見つかりませんでした</p></div>';
           return;
         }
 
@@ -740,27 +738,8 @@ const title = "ルート検索結果";
       });
 
       function selectRoute(routeId) {
-        localStorage.setItem('selectedRoute', routeId);
         window.location.href = '/countdown';
       }
-
-      // キャッシュクリーンアップ(起動時)
-      function cleanupCache() {
-        const keys = Object.keys(localStorage);
-        const now = Date.now();
-        keys.forEach(key => {
-          if (key.startsWith('routes_')) {
-            try {
-              const data = JSON.parse(localStorage.getItem(key));
-              if (data.timestamp + data.expiresIn < now) {
-                localStorage.removeItem(key);
-              }
-            } catch (e) {}
-          }
-        });
-      }
-
-      cleanupCache();
     </script>
   </body>
 </html>
