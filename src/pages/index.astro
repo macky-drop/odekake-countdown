@@ -312,12 +312,13 @@ import Layout from '../layouts/Layout.astro';
       countdownCard.style.display = 'block';
 
       // 通知チェック（秒数を考慮して正確なタイミングで通知）
-      // 例: 1分前 = 残り60秒～59秒の間に1回だけ通知
+      // セッションストレージで「すでに通知済み」をチェック
       const totalSeconds = Math.floor(diff / 1000);
       const totalMinutes = Math.floor(totalSeconds / 60);
+      const remainingSeconds = totalSeconds % 60;
       
-      if (pattern.notificationIntervals.includes(totalMinutes) && seconds_left >= 59) {
-        // 59秒以上の時だけ通知（ちょうど◯分00秒～◯分01秒の間）
+      // ちょうど◯分00秒～◯分59秒の間で、まだ通知していない場合のみ通知
+      if (pattern.notificationIntervals.includes(totalMinutes) && remainingSeconds >= 0) {
         checkAndNotify(totalMinutes);
       }
     }
