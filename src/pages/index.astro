@@ -1,384 +1,404 @@
 ---
-// src/pages/index.astro
-const title = "おでかけカウントダウン - チャット";
+import Layout from '../layouts/Layout.astro';
 ---
 
-<!doctype html>
-<html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+<Layout title="おでかけカウントダウンアプリ" activeTab="home">
+  <div class="home-container">
+    <h1 class="app-title">おでかけカウントダウン</h1>
+    
+    <!-- 日付・時刻表示 -->
+    <div class="card datetime-card">
+      <div class="date" id="current-date">2026年1月2日</div>
+      <div class="time" id="current-time">00:00:00</div>
+    </div>
 
-      :root {
-        --primary: #4CAF50;
-        --primary-dark: #388E3C;
-        --secondary: #2196F3;
-        --background: #F5F5F5;
-        --surface: #FFFFFF;
-        --text-primary: #212121;
-        --text-secondary: #757575;
-        --border: #E0E0E0;
-      }
-
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        background-color: var(--background);
-        color: var(--text-primary);
-        line-height: 1.6;
-        -webkit-font-smoothing: antialiased;
-      }
-
-      .chat-container {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        max-width: 600px;
-        margin: 0 auto;
-        background: var(--background);
-      }
-
-      .chat-header {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        color: white;
-        padding: 20px;
-        text-align: center;
-      }
-
-      .chat-header h1 {
-        font-size: 24px;
-        margin-bottom: 8px;
-      }
-
-      .chat-header p {
-        font-size: 14px;
-        opacity: 0.9;
-      }
-
-      .messages-container {
-        flex: 1;
-        overflow-y: auto;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-
-      .message {
-        display: flex;
-        gap: 12px;
-        animation: slideIn 0.3s ease-out;
-      }
-
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .user-message {
-        flex-direction: row-reverse;
-      }
-
-      .avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        flex-shrink: 0;
-      }
-
-      .bubble {
-        max-width: 70%;
-        padding: 12px 16px;
-        border-radius: 18px;
-        line-height: 1.5;
-        white-space: pre-line;
-      }
-
-      .bot-message .bubble {
-        background: var(--surface);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      .user-message .bubble {
-        background: var(--primary);
-        color: white;
-        border-bottom-right-radius: 4px;
-      }
-
-      .input-container {
-        padding: 16px;
-        background: var(--surface);
-        border-top: 1px solid var(--border);
-        padding-bottom: 80px;
-      }
-
-      .quick-actions {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 12px;
-      }
-
-      .quick-btn {
-        flex: 1;
-        padding: 8px 12px;
-        background: var(--background);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        font-size: 13px;
-        transition: all 0.2s;
-        cursor: pointer;
-      }
-
-      .quick-btn:hover {
-        background: var(--border);
-      }
-
-      .input-wrapper {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-      }
-
-      .message-input {
-        flex: 1;
-        padding: 12px 16px;
-        border: 2px solid var(--border);
-        border-radius: 24px;
-        font-size: 16px;
-        transition: border-color 0.2s;
-        font-family: inherit;
-      }
-
-      .message-input:focus {
-        outline: none;
-        border-color: var(--primary);
-      }
-
-      .send-btn {
-        width: 48px;
-        height: 48px;
-        background: var(--primary);
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-        cursor: pointer;
-        border: none;
-      }
-
-      .send-btn:hover {
-        background: var(--primary-dark);
-        transform: scale(1.05);
-      }
-
-      .send-btn:active {
-        transform: scale(0.95);
-      }
-
-      /* ナビゲーション */
-      .bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: var(--surface);
-        border-top: 1px solid var(--border);
-        display: flex;
-        justify-content: space-around;
-        padding: 8px 0;
-        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-        z-index: 100;
-        max-width: 600px;
-        margin: 0 auto;
-      }
-
-      .nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        padding: 8px 16px;
-        color: var(--text-secondary);
-        transition: color 0.2s;
-        min-width: 70px;
-        text-decoration: none;
-      }
-
-      .nav-item:hover {
-        color: var(--primary);
-      }
-
-      .nav-item.active {
-        color: var(--primary);
-      }
-
-      .nav-item span {
-        font-size: 12px;
-        font-weight: 500;
-      }
-
-      @media (max-width: 480px) {
-        .nav-item {
-          padding: 8px 12px;
-          min-width: 60px;
-        }
-        
-        .nav-item span {
-          font-size: 11px;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="chat-container">
-      <header class="chat-header">
-        <h1>🚀 おでかけプランナー</h1>
-        <p>どこへ、いつ到着したいですか?</p>
-      </header>
-
-      <div class="messages-container" id="messagesContainer">
-        <div class="message bot-message">
-          <div class="avatar">🤖</div>
-          <div class="bubble">こんにちは！おでかけのお手伝いをします。
-目的地と到着時間を教えてください。
-
-例: 「渋谷駅に10時に着きたい」</div>
-        </div>
-      </div>
-
-      <div class="input-container">
-        <div class="quick-actions">
-          <button class="quick-btn" data-action="current-location">
-            📍 現在地から
-          </button>
-          <button class="quick-btn" data-action="favorites">
-            ⭐ お気に入り
-          </button>
-        </div>
-        
-        <div class="input-wrapper">
-          <input 
-            type="text" 
-            id="messageInput" 
-            class="message-input" 
-            placeholder="メッセージを入力..."
-            autocomplete="off"
-          />
-          <button id="sendBtn" class="send-btn">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
-        </div>
+    <!-- アラーム状況 -->
+    <div class="card alarm-status" id="alarm-status">
+      <h2 class="section-title">アラーム設定状況</h2>
+      <div id="alarm-info" class="alarm-info">
+        <p class="no-alarm">アラームが設定されていません</p>
       </div>
     </div>
 
-    <nav class="bottom-nav">
-      <a href="/" class="nav-item active">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
-        <span>チャット</span>
-      </a>
-      
-      <a href="/routes" class="nav-item">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-          <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
-        <span>ルート</span>
-      </a>
-      
-      <a href="/countdown" class="nav-item">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        <span>カウントダウン</span>
-      </a>
-      
-      <a href="/settings" class="nav-item">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M12 1v6m0 6v6m5.2-13.2l-3.5 3.5m-3.5 3.5l-3.5 3.5M23 12h-6m-6 0H1m18.2 5.2l-3.5-3.5m-3.5-3.5l-3.5-3.5"></path>
-        </svg>
-        <span>設定</span>
-      </a>
-    </nav>
+    <!-- カウントダウン表示 -->
+    <div class="card countdown-card" id="countdown-card" style="display: none;">
+      <h2 class="section-title">カウントダウン</h2>
+      <div class="countdown-display" id="countdown-display">
+        <div class="countdown-time">--:--:--</div>
+        <div class="countdown-label">おでかけまで</div>
+      </div>
+    </div>
 
-    <script>
-      const messagesContainer = document.getElementById('messagesContainer');
-      const messageInput = document.getElementById('messageInput');
-      const sendBtn = document.getElementById('sendBtn');
+    <!-- 天気情報 -->
+    <div class="card weather-card">
+      <h2 class="section-title">現在地の天気</h2>
+      <div id="weather-info" class="weather-info">
+        <div class="loading">読み込み中...</div>
+      </div>
+    </div>
+  </div>
 
-      function addMessage(text, isUser) {
-        const message = document.createElement('div');
-        message.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-        
-        const avatar = document.createElement('div');
-        avatar.className = 'avatar';
-        avatar.textContent = isUser ? '👤' : '🤖';
-        
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        bubble.textContent = text;
-        
-        message.appendChild(avatar);
-        message.appendChild(bubble);
-        messagesContainer?.appendChild(message);
-        messagesContainer?.scrollTo(0, messagesContainer.scrollHeight);
+  <style>
+    .home-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .app-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--color-primary);
+      text-align: center;
+    }
+
+    .datetime-card {
+      text-align: center;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+      color: white;
+    }
+
+    .date {
+      font-size: 1.125rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .time {
+      font-size: 2.5rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .alarm-info {
+      cursor: pointer;
+      transition: background 0.2s;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+
+    .alarm-info:hover {
+      background: var(--color-background);
+    }
+
+    .no-alarm {
+      color: var(--color-text-secondary);
+      text-align: center;
+    }
+
+    .alarm-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .alarm-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem;
+      background: var(--color-background);
+      border-radius: 6px;
+    }
+
+    .alarm-label {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .alarm-time {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    .countdown-card {
+      background: linear-gradient(135deg, var(--color-secondary) 0%, #059669 100%);
+      color: white;
+    }
+
+    .countdown-display {
+      text-align: center;
+    }
+
+    .countdown-time {
+      font-size: 3rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 0.5rem;
+    }
+
+    .countdown-label {
+      font-size: 1.125rem;
+      opacity: 0.9;
+    }
+
+    .weather-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .loading {
+      color: var(--color-text-secondary);
+      text-align: center;
+      width: 100%;
+    }
+
+    .weather-display {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      width: 100%;
+    }
+
+    .weather-icon {
+      font-size: 3rem;
+    }
+
+    .weather-details {
+      flex: 1;
+    }
+
+    .weather-temp {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    .weather-desc {
+      color: var(--color-text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 640px) {
+      .app-title {
+        font-size: 1.5rem;
       }
 
-      function handleSend() {
-        const text = messageInput.value.trim();
-        if (!text) return;
-
-        addMessage(text, true);
-        messageInput.value = '';
-
-        setTimeout(() => {
-          addMessage('経路を検索しています...', false);
-          setTimeout(() => {
-            window.location.href = '/routes';
-          }, 1000);
-        }, 500);
+      .time {
+        font-size: 2rem;
       }
 
-      sendBtn?.addEventListener('click', handleSend);
-      messageInput?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSend();
-      });
+      .countdown-time {
+        font-size: 2.5rem;
+      }
+    }
+  </style>
 
-      document.querySelectorAll('.quick-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const action = e.currentTarget.dataset.action;
-          if (action === 'current-location') {
-            addMessage('現在地から検索します', true);
-            setTimeout(() => {
-              addMessage('現在地を取得しました。目的地を教えてください。', false);
-            }, 500);
-          }
+  <script>
+    import type { AlarmPattern, WeatherData } from '../types';
+
+    // 現在時刻の更新
+    function updateDateTime() {
+      const now = new Date();
+      const dateEl = document.getElementById('current-date');
+      const timeEl = document.getElementById('current-time');
+      
+      if (dateEl) {
+        dateEl.textContent = now.toLocaleDateString('ja-JP', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
         });
+      }
+      
+      if (timeEl) {
+        timeEl.textContent = now.toLocaleTimeString('ja-JP', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      }
+    }
+
+    // アラーム情報の表示
+    function displayAlarmInfo() {
+      const alarmInfoEl = document.getElementById('alarm-info');
+      if (!alarmInfoEl) return;
+
+      const stored = localStorage.getItem('alarmPatterns');
+      if (!stored) {
+        alarmInfoEl.innerHTML = '<p class="no-alarm">アラームが設定されていません</p>';
+        return;
+      }
+
+      const patterns: AlarmPattern[] = JSON.parse(stored);
+      const activePattern = patterns.find(p => p.isActive);
+
+      if (!activePattern) {
+        alarmInfoEl.innerHTML = '<p class="no-alarm">アラームが設定されていません</p>';
+        return;
+      }
+
+      alarmInfoEl.innerHTML = `
+        <div class="alarm-details">
+          <div class="alarm-item">
+            <span class="alarm-label">パターン</span>
+            <span>${activePattern.label}</span>
+          </div>
+          <div class="alarm-item">
+            <span class="alarm-label">めざまし</span>
+            <span class="alarm-time">${activePattern.wakeUpTime}</span>
+          </div>
+          <div class="alarm-item">
+            <span class="alarm-label">おでかけ</span>
+            <span class="alarm-time">${activePattern.departureTime}</span>
+          </div>
+        </div>
+      `;
+
+      // カウントダウンの更新
+      updateCountdown(activePattern);
+    }
+
+    // カウントダウンの更新
+    function updateCountdown(pattern: AlarmPattern) {
+      const countdownCard = document.getElementById('countdown-card');
+      const countdownDisplay = document.getElementById('countdown-display');
+      if (!countdownCard || !countdownDisplay) return;
+
+      const now = new Date();
+      const [hours, minutes] = pattern.departureTime.split(':').map(Number);
+      const target = new Date(now);
+      target.setHours(hours, minutes, 0, 0);
+
+      // 翌日の判定
+      if (target < now) {
+        target.setDate(target.getDate() + 1);
+      }
+
+      const diff = target.getTime() - now.getTime();
+      
+      if (diff <= 0) {
+        countdownCard.style.display = 'none';
+        return;
+      }
+
+      const hours_left = Math.floor(diff / (1000 * 60 * 60));
+      const minutes_left = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds_left = Math.floor((diff % (1000 * 60)) / 1000);
+
+      countdownDisplay.innerHTML = `
+        <div class="countdown-time">${String(hours_left).padStart(2, '0')}:${String(minutes_left).padStart(2, '0')}:${String(seconds_left).padStart(2, '0')}</div>
+        <div class="countdown-label">おでかけまで</div>
+      `;
+      
+      countdownCard.style.display = 'block';
+
+      // 通知チェック
+      const minutesLeft = Math.floor(diff / (1000 * 60));
+      if (pattern.notificationIntervals.includes(minutesLeft)) {
+        checkAndNotify(minutesLeft);
+      }
+    }
+
+    // 通知処理
+    function checkAndNotify(minutesLeft: number) {
+      const lastNotified = sessionStorage.getItem(`notified_${minutesLeft}`);
+      if (lastNotified) return;
+
+      sessionStorage.setItem(`notified_${minutesLeft}`, 'true');
+
+      // 音声通知
+      const settings = JSON.parse(localStorage.getItem('settings') || '{"soundEnabled":true}');
+      if (settings.soundEnabled && 'speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(`おでかけ${minutesLeft}分前です`);
+        utterance.lang = 'ja-JP';
+        speechSynthesis.speak(utterance);
+      }
+
+      // ブラウザ通知
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('おでかけカウントダウン', {
+          body: `おでかけ${minutesLeft}分前です`,
+          icon: '/favicon.svg'
+        });
+      }
+    }
+
+    // 天気情報の取得
+    async function fetchWeather() {
+      const weatherInfoEl = document.getElementById('weather-info');
+      if (!weatherInfoEl) return;
+
+      try {
+        if (!('geolocation' in navigator)) {
+          throw new Error('位置情報が利用できません');
+        }
+
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+
+        const { latitude, longitude } = position.coords;
+        
+        // OpenWeatherMap APIキーは環境変数から取得（本番環境ではサーバーサイドで処理）
+        // ここではダミーデータを表示
+        const weatherData: WeatherData = {
+          temp: 8,
+          description: '晴れ',
+          icon: '☀️'
+        };
+
+        weatherInfoEl.innerHTML = `
+          <div class="weather-display">
+            <div class="weather-icon">${weatherData.icon}</div>
+            <div class="weather-details">
+              <div class="weather-temp">${weatherData.temp}℃</div>
+              <div class="weather-desc">${weatherData.description}</div>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        weatherInfoEl.innerHTML = `
+          <div class="weather-display">
+            <div class="weather-details">
+              <div class="weather-desc">天気情報を取得できませんでした</div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // アラーム設定エリアのクリックイベント
+    const alarmStatus = document.getElementById('alarm-status');
+    if (alarmStatus) {
+      alarmStatus.addEventListener('click', () => {
+        window.location.href = '/alarms';
       });
-    </script>
-  </body>
-</html>
+    }
+
+    // 初期化
+    updateDateTime();
+    displayAlarmInfo();
+    fetchWeather();
+
+    // 通知許可をリクエスト
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
+    // 定期更新
+    setInterval(() => {
+      updateDateTime();
+      const stored = localStorage.getItem('alarmPatterns');
+      if (stored) {
+        const patterns: AlarmPattern[] = JSON.parse(stored);
+        const activePattern = patterns.find(p => p.isActive);
+        if (activePattern) {
+          updateCountdown(activePattern);
+        }
+      }
+    }, 1000);
+  </script>
+</Layout>
