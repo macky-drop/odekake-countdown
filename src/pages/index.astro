@@ -280,6 +280,8 @@ import Layout from '../layouts/Layout.astro';
       const diff = target.getTime() - now.getTime();
       
       if (diff <= 0) {
+        // おでかけ時刻になった
+        checkAndNotify(0); // 0分 = おでかけ時刻
         countdownCard.style.display = 'none';
         return;
       }
