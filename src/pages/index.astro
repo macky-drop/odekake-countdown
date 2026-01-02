@@ -330,15 +330,18 @@ import Layout from '../layouts/Layout.astro';
       const target = new Date(now);
       target.setHours(hours, minutes, 0, 0);
 
-      if (target < now) {
+      // 今日のおでかけ時刻が過ぎていたら翌日に設定
+      if (target <= now) {
         target.setDate(target.getDate() + 1);
       }
 
       const diff = target.getTime() - now.getTime();
       
+      // おでかけ時刻を過ぎた場合（diff <= 0）
       if (diff <= 0) {
         checkAndNotify(0);
         countdownCard.style.display = 'none';
+        // 翌日のカウントダウンを開始するため、次の更新で再計算される
         return;
       }
 
@@ -351,6 +354,12 @@ import Layout from '../layouts/Layout.astro';
 
       // 通知チェック（正確なタイミング）
       const totalSeconds = Math.floor(diff / 1000);
+      
+      // 00:00:00になった瞬間（totalSeconds === 0）
+      if (totalSeconds === 0) {
+        checkAndNotify(0);
+        return;
+      }
       
       // 各通知間隔に対して、ちょうどその時刻になったら通知
       pattern.notificationIntervals.forEach(interval => {
