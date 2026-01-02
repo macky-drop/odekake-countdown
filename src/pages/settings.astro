@@ -1,587 +1,377 @@
 ---
-// src/pages/settings.astro
-const title = "設定";
+import Layout from '../layouts/Layout.astro';
 ---
 
-<!doctype html>
-<html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+<Layout title="設定 - おでかけカウントダウン" activeTab="settings">
+  <div class="settings-container">
+    <h1 class="page-title">設定</h1>
 
-      :root {
-        --primary: #4CAF50;
-        --primary-dark: #388E3C;
-        --secondary: #2196F3;
-        --background: #F5F5F5;
-        --surface: #FFFFFF;
-        --text-primary: #212121;
-        --text-secondary: #757575;
-        --border: #E0E0E0;
-        --error: #F44336;
-      }
+    <!-- 通知設定 -->
+    <div class="card">
+      <h2 class="section-title">通知設定</h2>
+      
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">音声通知</div>
+          <div class="setting-desc">カウントダウン時に音声で通知します</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="sound-enabled" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
 
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        background-color: var(--background);
-        color: var(--text-primary);
-        line-height: 1.6;
-        -webkit-font-smoothing: antialiased;
-      }
-
-      .settings-container {
-        min-height: 100vh;
-        background: var(--background);
-        max-width: 600px;
-        margin: 0 auto;
-      }
-
-      .settings-header {
-        background: var(--surface);
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        position: sticky;
-        top: 0;
-        z-index: 10;
-      }
-
-      .settings-header h1 {
-        font-size: 24px;
-        text-align: center;
-      }
-
-      .container {
-        padding: 0 16px 100px;
-      }
-
-      .settings-section {
-        margin: 24px 0;
-      }
-
-      .section-title {
-        font-size: 18px;
-        margin-bottom: 12px;
-        padding: 0 4px;
-      }
-
-      .card {
-        background: var(--surface);
-        border-radius: 12px;
-        padding: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      .favorite-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-bottom: 16px;
-      }
-
-      .favorite-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px;
-        background: var(--background);
-        border-radius: 8px;
-      }
-
-      .favorite-info {
-        flex: 1;
-      }
-
-      .favorite-name {
-        font-weight: 600;
-        font-size: 16px;
-        margin-bottom: 2px;
-      }
-
-      .favorite-detail {
-        font-size: 13px;
-        color: var(--text-secondary);
-      }
-
-      .icon-btn {
-        padding: 8px;
-        color: var(--text-secondary);
-        transition: color 0.2s;
-        background: none;
-        border: none;
-        cursor: pointer;
-      }
-
-      .icon-btn:hover {
-        color: var(--error);
-      }
-
-      .alarm-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 12px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .alarm-item:last-of-type {
-        border-bottom: none;
-      }
-
-      .alarm-info {
-        flex: 1;
-      }
-
-      .alarm-time {
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 4px;
-      }
-
-      .alarm-days {
-        font-size: 14px;
-        color: var(--text-secondary);
-        margin-bottom: 2px;
-      }
-
-      .alarm-label {
-        font-size: 13px;
-        color: var(--primary);
-        font-weight: 500;
-      }
-
-      .switch {
-        position: relative;
-        display: inline-block;
-        width: 50px;
-        height: 28px;
-      }
-
-      .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
-
-      .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: var(--border);
-        transition: 0.3s;
-        border-radius: 28px;
-      }
-
-      .slider:before {
-        position: absolute;
-        content: "";
-        height: 20px;
-        width: 20px;
-        left: 4px;
-        bottom: 4px;
-        background-color: white;
-        transition: 0.3s;
-        border-radius: 50%;
-      }
-
-      input:checked + .slider {
-        background-color: var(--primary);
-      }
-
-      input:checked + .slider:before {
-        transform: translateX(22px);
-      }
-
-      .setting-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 12px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .setting-item:last-child {
-        border-bottom: none;
-      }
-
-      .setting-info {
-        flex: 1;
-      }
-
-      .setting-name {
-        font-weight: 600;
-        font-size: 16px;
-        margin-bottom: 2px;
-      }
-
-      .setting-detail {
-        font-size: 13px;
-        color: var(--text-secondary);
-      }
-
-      .select-field {
-        padding: 8px 12px;
-        border: 2px solid var(--border);
-        border-radius: 8px;
-        background: var(--surface);
-        font-size: 14px;
-        cursor: pointer;
-        font-family: inherit;
-      }
-
-      .btn {
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-weight: 600;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        cursor: pointer;
-        font-family: inherit;
-        font-size: 14px;
-      }
-
-      .btn-outline {
-        border: 2px solid var(--border);
-        color: var(--text-primary);
-        background: var(--surface);
-      }
-
-      .btn-outline:hover {
-        background-color: var(--background);
-      }
-
-      .full-width {
-        width: 100%;
-        margin-top: 8px;
-      }
-
-      .app-info {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 16px 12px;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .app-icon {
-        font-size: 48px;
-      }
-
-      .app-details {
-        flex: 1;
-      }
-
-      .app-name {
-        font-weight: 600;
-        font-size: 18px;
-        margin-bottom: 4px;
-      }
-
-      .app-version {
-        font-size: 14px;
-        color: var(--text-secondary);
-      }
-
-      .info-links {
-        display: flex;
-        flex-direction: column;
-        padding: 12px;
-      }
-
-      .info-link {
-        padding: 12px;
-        color: var(--text-primary);
-        font-size: 15px;
-        transition: color 0.2s;
-        text-decoration: none;
-      }
-
-      .info-link:hover {
-        color: var(--primary);
-      }
-
-      /* ナビゲーション */
-      .bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: var(--surface);
-        border-top: 1px solid var(--border);
-        display: flex;
-        justify-content: space-around;
-        padding: 8px 0;
-        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-        z-index: 100;
-        max-width: 600px;
-        margin: 0 auto;
-      }
-
-      .nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        padding: 8px 16px;
-        color: var(--text-secondary);
-        transition: color 0.2s;
-        min-width: 70px;
-        text-decoration: none;
-      }
-
-      .nav-item:hover {
-        color: var(--primary);
-      }
-
-      .nav-item.active {
-        color: var(--primary);
-      }
-
-      .nav-item span {
-        font-size: 12px;
-        font-weight: 500;
-      }
-
-      @media (max-width: 480px) {
-        .alarm-time {
-          font-size: 24px;
-        }
-
-        .nav-item {
-          padding: 8px 12px;
-          min-width: 60px;
-        }
-        
-        .nav-item span {
-          font-size: 11px;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="settings-container">
-      <header class="settings-header">
-        <h1>⚙️ 設定</h1>
-      </header>
-
-      <div class="container">
-        <!-- お気に入り登録 -->
-        <section class="settings-section">
-          <h2 class="section-title">⭐ お気に入り</h2>
-          <div class="card">
-            <div class="favorite-list">
-              <div class="favorite-item">
-                <div class="favorite-info">
-                  <div class="favorite-name">渋谷駅</div>
-                  <div class="favorite-detail">よく行く場所</div>
-                </div>
-                <button class="icon-btn delete-btn">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  </svg>
-                </button>
-              </div>
-              <div class="favorite-item">
-                <div class="favorite-info">
-                  <div class="favorite-name">横浜駅</div>
-                  <div class="favorite-detail">通勤先</div>
-                </div>
-                <button class="icon-btn delete-btn">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <button class="btn btn-outline full-width" id="addFavorite">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              お気に入りを追加
-            </button>
-          </div>
-        </section>
-
-        <!-- 目覚まし時計 -->
-        <section class="settings-section">
-          <h2 class="section-title">⏰ 目覚まし時計</h2>
-          <div class="card">
-            <div class="alarm-item">
-              <div class="alarm-info">
-                <div class="alarm-time">07:00</div>
-                <div class="alarm-days">平日</div>
-                <div class="alarm-label">平日の朝</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" checked />
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="alarm-item">
-              <div class="alarm-info">
-                <div class="alarm-time">09:00</div>
-                <div class="alarm-days">週末</div>
-                <div class="alarm-label">週末の朝</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" />
-                <span class="slider"></span>
-              </label>
-            </div>
-            <button class="btn btn-outline full-width" id="addAlarm">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              アラームを追加
-            </button>
-          </div>
-        </section>
-
-        <!-- 通知設定 -->
-        <section class="settings-section">
-          <h2 class="section-title">🔔 通知設定</h2>
-          <div class="card">
-            <div class="setting-item">
-              <div class="setting-info">
-                <div class="setting-name">出発60分前</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" />
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-item">
-              <div class="setting-info">
-                <div class="setting-name">出発30分前</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" checked />
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-item">
-              <div class="setting-info">
-                <div class="setting-name">出発10分前</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" checked />
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-item">
-              <div class="setting-info">
-                <div class="setting-name">出発5分前</div>
-              </div>
-              <label class="switch">
-                <input type="checkbox" checked />
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-        </section>
-
-        <!-- その他の設定 -->
-        <section class="settings-section">
-          <h2 class="section-title">🛠️ その他</h2>
-          <div class="card">
-            <div class="setting-item">
-              <div class="setting-info">
-                <div class="setting-name">歩行速度</div>
-                <div class="setting-detail">徒歩時間の計算に使用</div>
-              </div>
-              <select class="select-field">
-                <option>遅い (3km/h)</option>
-                <option selected>普通 (4km/h)</option>
-                <option>速い (5km/h)</option>
-              </select>
-            </div>
-            <div class="setting-item">
-              <div class="setting-info">
-                <div class="setting-name">アラーム音</div>
-                <div class="setting-detail">出発時に再生する音</div>
-              </div>
-              <button class="btn btn-outline">選択</button>
-            </div>
-          </div>
-        </section>
-
-        <!-- アプリ情報 -->
-        <section class="settings-section">
-          <div class="card">
-            <div class="app-info">
-              <div class="app-icon">🚀</div>
-              <div class="app-details">
-                <div class="app-name">おでかけカウントダウン</div>
-                <div class="app-version">Version 1.0.0</div>
-              </div>
-            </div>
-            <div class="info-links">
-              <a href="#" class="info-link">利用規約</a>
-              <a href="#" class="info-link">プライバシーポリシー</a>
-              <a href="#" class="info-link">お問い合わせ</a>
-            </div>
-          </div>
-        </section>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">ブラウザ通知</div>
+          <div class="setting-desc">ブラウザのプッシュ通知を使用します</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="notification-enabled" checked>
+          <span class="toggle-slider"></span>
+        </label>
       </div>
     </div>
 
-    <nav class="bottom-nav">
-      <a href="/" class="nav-item">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
-        <span>チャット</span>
-      </a>
+    <!-- 位置情報設定 -->
+    <div class="card">
+      <h2 class="section-title">位置情報</h2>
       
-      <a href="/routes" class="nav-item">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-          <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
-        <span>ルート</span>
-      </a>
-      
-      <a href="/countdown" class="nav-item">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        <span>カウントダウン</span>
-      </a>
-      
-      <a href="/settings" class="nav-item active">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M12 1v6m0 6v6m5.2-13.2l-3.5 3.5m-3.5 3.5l-3.5 3.5M23 12h-6m-6 0H1m18.2 5.2l-3.5-3.5m-3.5-3.5l-3.5-3.5"></path>
-        </svg>
-        <span>設定</span>
-      </a>
-    </nav>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">位置情報の使用</div>
+          <div class="setting-desc">天気情報取得に使用します</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="location-enabled" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
 
-    <script>
-      document.getElementById('addFavorite')?.addEventListener('click', () => {
-        alert('お気に入り追加機能（チャットから追加可能）');
-      });
+    <!-- データ管理 -->
+    <div class="card">
+      <h2 class="section-title">データ管理</h2>
+      
+      <button class="btn btn-secondary btn-full" id="export-data">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        データをエクスポート
+      </button>
 
-      document.getElementById('addAlarm')?.addEventListener('click', () => {
-        alert('アラーム追加機能');
-      });
-    </script>
-  </body>
-</html>
+      <button class="btn btn-secondary btn-full" id="import-data">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        データをインポート
+      </button>
+      <input type="file" id="import-file" accept=".json" style="display: none;">
+
+      <button class="btn btn-secondary btn-full" id="clear-data" style="color: var(--color-error); margin-top: 1rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+        すべてのデータを削除
+      </button>
+    </div>
+
+    <!-- アプリ情報 -->
+    <div class="card">
+      <h2 class="section-title">アプリ情報</h2>
+      
+      <div class="info-item">
+        <span class="info-label">バージョン</span>
+        <span class="info-value">1.0.0</span>
+      </div>
+
+      <div class="info-item">
+        <span class="info-label">ビルド日</span>
+        <span class="info-value">2026年1月2日</span>
+      </div>
+    </div>
+
+    <!-- リンク -->
+    <div class="card">
+      <h2 class="section-title">サポート</h2>
+      
+      <a href="#" class="link-item">
+        <span>利用規約</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </a>
+
+      <a href="#" class="link-item">
+        <span>プライバシーポリシー</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </a>
+
+      <a href="#" class="link-item">
+        <span>お問い合わせ</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <style>
+    .settings-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--color-text);
+    }
+
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+
+    .setting-info {
+      flex: 1;
+    }
+
+    .setting-label {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .setting-desc {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 48px;
+      height: 28px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #cbd5e1;
+      border-radius: 28px;
+      transition: 0.3s;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--color-primary);
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+
+    .btn-full {
+      width: 100%;
+      margin-bottom: 0.75rem;
+    }
+
+    .btn-full:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .info-item:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: var(--color-text-secondary);
+    }
+
+    .info-value {
+      font-weight: 600;
+    }
+
+    .link-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      text-decoration: none;
+      color: var(--color-text);
+      border-bottom: 1px solid var(--color-border);
+      transition: color 0.2s;
+    }
+
+    .link-item:hover {
+      color: var(--color-primary);
+    }
+
+    .link-item:last-child {
+      border-bottom: none;
+    }
+  </style>
+
+  <script>
+    import type { AppSettings, LocalStorageData } from '../types';
+
+    // 設定の読み込み
+    function loadSettings() {
+      const stored = localStorage.getItem('settings');
+      const settings: AppSettings = stored ? JSON.parse(stored) : {
+        soundEnabled: true,
+        musicUrl: '',
+        locationEnabled: true,
+        notificationEnabled: true
+      };
+
+      (document.getElementById('sound-enabled') as HTMLInputElement).checked = settings.soundEnabled;
+      (document.getElementById('notification-enabled') as HTMLInputElement).checked = settings.notificationEnabled;
+      (document.getElementById('location-enabled') as HTMLInputElement).checked = settings.locationEnabled;
+
+      return settings;
+    }
+
+    // 設定の保存
+    function saveSettings() {
+      const settings: AppSettings = {
+        soundEnabled: (document.getElementById('sound-enabled') as HTMLInputElement).checked,
+        notificationEnabled: (document.getElementById('notification-enabled') as HTMLInputElement).checked,
+        locationEnabled: (document.getElementById('location-enabled') as HTMLInputElement).checked,
+        musicUrl: ''
+      };
+
+      localStorage.setItem('settings', JSON.stringify(settings));
+
+      // 通知許可のリクエスト
+      if (settings.notificationEnabled && 'Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+
+    // データのエクスポート
+    function exportData() {
+      const data: LocalStorageData = {
+        alarmPatterns: JSON.parse(localStorage.getItem('alarmPatterns') || '[]'),
+        settings: JSON.parse(localStorage.getItem('settings') || '{}')
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `outing-countdown-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // データのインポート
+    function importData(file: File) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data: LocalStorageData = JSON.parse(e.target?.result as string);
+          
+          if (data.alarmPatterns) {
+            localStorage.setItem('alarmPatterns', JSON.stringify(data.alarmPatterns));
+          }
+          
+          if (data.settings) {
+            localStorage.setItem('settings', JSON.stringify(data.settings));
+          }
+
+          alert('データをインポートしました');
+          window.location.reload();
+        } catch (error) {
+          alert('データのインポートに失敗しました');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // データの削除
+    function clearData() {
+      if (!confirm('すべてのデータを削除しますか?この操作は取り消せません。')) {
+        return;
+      }
+
+      localStorage.removeItem('alarmPatterns');
+      localStorage.removeItem('settings');
+      sessionStorage.clear();
+
+      alert('すべてのデータを削除しました');
+      window.location.reload();
+    }
+
+    // イベントリスナー設定
+    document.getElementById('sound-enabled')?.addEventListener('change', saveSettings);
+    document.getElementById('notification-enabled')?.addEventListener('change', saveSettings);
+    document.getElementById('location-enabled')?.addEventListener('change', saveSettings);
+
+    document.getElementById('export-data')?.addEventListener('click', exportData);
+
+    document.getElementById('import-data')?.addEventListener('click', () => {
+      document.getElementById('import-file')?.click();
+    });
+
+    document.getElementById('import-file')?.addEventListener('change', (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        importData(file);
+      }
+    });
+
+    document.getElementById('clear-data')?.addEventListener('click', clearData);
+
+    // 初期化
+    loadSettings();
+  </script>
+</Layout>
