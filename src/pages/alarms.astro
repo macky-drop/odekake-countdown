@@ -167,13 +167,22 @@ import Layout from '../layouts/Layout.astro';
       transform: translateX(20px);
     }
 
+    .favorite-label-wrapper {
+      flex: 1;
+      min-width: 0;
+    }
+
     .favorite-label {
       font-weight: 600;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      flex: 1;
-      min-width: 60px;
+    }
+
+    .favorite-repeat {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      margin-top: 2px;
     }
 
     .favorite-time {
@@ -352,10 +361,6 @@ import Layout from '../layouts/Layout.astro';
       .favorite-item {
         font-size: 0.8rem;
       }
-
-      .favorite-label {
-        min-width: 50px;
-      }
     }
   </style>
 
@@ -380,16 +385,17 @@ import Layout from '../layouts/Layout.astro';
 
       listEl.innerHTML = patterns.map(pattern => {
         const wakeDisplay = pattern.wakeUpTime || 'OFF';
-        const repeatDisplay = pattern.repeatDays.length > 0 
-          ? `<div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">🔁 ${pattern.repeatDays.map(d => WEEKDAYS[d]).join(',')}</div>`
+        const repeatDisplay = pattern.repeatDays && pattern.repeatDays.length > 0 
+          ? `<div class="favorite-repeat">🔁 ${pattern.repeatDays.map(d => WEEKDAYS[d]).join(',')}</div>`
           : '';
+        
         return `
         <div class="favorite-item">
           <label class="toggle-switch">
             <input type="checkbox" ${pattern.isActive ? 'checked' : ''} data-id="${pattern.id}" class="toggle-active">
             <span class="toggle-slider"></span>
           </label>
-          <div style="flex: 1; min-width: 60px;">
+          <div class="favorite-label-wrapper">
             <div class="favorite-label">${pattern.label}</div>
             ${repeatDisplay}
           </div>
@@ -485,8 +491,10 @@ import Layout from '../layouts/Layout.astro';
       });
 
       // 繰り返し曜日の復元
-      document.querySelectorAll('.weekday-btn').forEach((btn, index) => {
-        if (pattern.repeatDays.includes(index)) {
+      document.querySelectorAll('.weekday-btn').forEach((btn) => {
+        const dayStr = btn.getAttribute('data-day');
+        const dayNum = dayStr ? parseInt(dayStr) : -1;
+        if (pattern.repeatDays && pattern.repeatDays.includes(dayNum)) {
           btn.classList.add('active');
         } else {
           btn.classList.remove('active');
@@ -557,9 +565,12 @@ import Layout from '../layouts/Layout.astro';
           <button type="button" class="weekday-btn" data-day="${index}">${day}</button>
         `).join('');
 
-        weekdayButtons.querySelectorAll('.weekday-btn').forEach(btn => {
+        // 曜日ボタンのクリックイベント
+        const buttons = weekdayButtons.querySelectorAll('.weekday-btn');
+        buttons.forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             btn.classList.toggle('active');
           });
         });
@@ -599,21 +610,18 @@ import Layout from '../layouts/Layout.astro';
 
       // 通知間隔の取得
       const intervals: number[] = [];
-      document.querySelectorAll('#intervals-grid input[type="checkbox"]:checked').forEach(input => {
+      document.querySelectorAll('#intervals-grid input:checked').forEach(input => {
         intervals.push(parseInt((input as HTMLInputElement).value));
       });
 
       // 繰り返し曜日の取得
       const repeatDays: number[] = [];
       document.querySelectorAll('.weekday-btn.active').forEach(btn => {
-        const dayValue = (btn as HTMLButtonElement).dataset.day;
-        if (dayValue) {
-          repeatDays.push(parseInt(dayValue));
+        const dayStr = btn.getAttribute('data-day');
+        if (dayStr) {
+          repeatDays.push(parseInt(dayStr));
         }
       });
-
-      // repeatDaysをソート
-      repeatDays.sort((a, b) => a - b);
 
       const stored = localStorage.getItem('alarmPatterns');
       const patterns: AlarmPattern[] = stored ? JSON.parse(stored) : [];
@@ -628,7 +636,7 @@ import Layout from '../layouts/Layout.astro';
             wakeUpTime: wakeTime,
             departureTime: departureTime,
             notificationIntervals: intervals,
-            repeatDays,
+            repeatDays: repeatDays.sort((a, b) => a - b),
             updatedAt: new Date().toISOString()
           };
         }
@@ -640,7 +648,7 @@ import Layout from '../layouts/Layout.astro';
           wakeUpTime: wakeTime,
           departureTime: departureTime,
           notificationIntervals: intervals,
-          repeatDays,
+          repeatDays: repeatDays.sort((a, b) => a - b),
           isActive: patterns.length === 0,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
