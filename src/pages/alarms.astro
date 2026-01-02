@@ -1,0 +1,611 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="アラーム設定 - おでかけカウントダウン" activeTab="alarms">
+  <div class="alarms-container">
+    <h1 class="page-title">アラーム設定</h1>
+
+    <!-- お気に入りリスト -->
+    <div class="card">
+      <h2 class="section-title">お気に入り</h2>
+      <div id="favorites-list" class="favorites-list">
+        <p class="empty-message">登録されたパターンがありません</p>
+      </div>
+    </div>
+
+    <!-- 新規作成ボタン -->
+    <button class="btn btn-primary btn-full" id="new-alarm-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      新規作成
+    </button>
+
+    <!-- アラームフォームモーダル -->
+    <div id="alarm-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title">新規アラーム</h2>
+          <button class="close-btn" id="close-modal">×</button>
+        </div>
+
+        <form id="alarm-form" class="alarm-form">
+          <input type="hidden" id="edit-id" />
+
+          <div class="form-group">
+            <label for="label">ラベル</label>
+            <input type="text" id="label" placeholder="例: 出勤パターン" required />
+          </div>
+
+          <div class="form-group">
+            <label for="wake-time">めざまし時刻</label>
+            <input type="time" id="wake-time" required />
+          </div>
+
+          <div class="form-group">
+            <label for="departure-time">おでかけ時刻</label>
+            <input type="time" id="departure-time" required />
+          </div>
+
+          <div class="form-group">
+            <label>カウントダウン通知間隔</label>
+            <div class="checkbox-grid" id="intervals-grid"></div>
+          </div>
+
+          <div class="form-group">
+            <label>繰り返し</label>
+            <div class="weekday-buttons" id="weekday-buttons"></div>
+          </div>
+
+          <div class="error-message" id="error-message" style="display: none;"></div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" id="cancel-btn">キャンセル</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .alarms-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--color-text);
+    }
+
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .favorites-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .empty-message {
+      text-align: center;
+      color: var(--color-text-secondary);
+      padding: 2rem 0;
+    }
+
+    .favorite-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--color-background);
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .favorite-item:hover {
+      background: #e2e8f0;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 48px;
+      height: 28px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #cbd5e1;
+      border-radius: 28px;
+      transition: 0.3s;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--color-primary);
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+
+    .favorite-info {
+      flex: 1;
+    }
+
+    .favorite-label {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .favorite-times {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+    }
+
+    .favorite-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+      color: var(--color-text-secondary);
+      transition: color 0.2s;
+    }
+
+    .icon-btn:hover {
+      color: var(--color-text);
+    }
+
+    .icon-btn.delete:hover {
+      color: var(--color-error);
+    }
+
+    .btn-full {
+      width: 100%;
+      margin-top: 1rem;
+    }
+
+    /* モーダル */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background: var(--color-surface);
+      border-radius: 12px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .modal-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      line-height: 1;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .alarm-form {
+      padding: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      width: auto;
+    }
+
+    .weekday-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .weekday-btn {
+      padding: 0.5rem 1rem;
+      border: 2px solid var(--color-border);
+      background: var(--color-surface);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .weekday-btn.active {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: white;
+    }
+
+    .error-message {
+      background: #fee;
+      color: var(--color-error);
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .form-actions .btn {
+      flex: 1;
+    }
+
+    @media (max-width: 640px) {
+      .checkbox-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+
+  <script>
+    import type { AlarmPattern } from '../types';
+    import { NOTIFICATION_INTERVALS, WEEKDAYS } from '../types';
+
+    let editingId: string | null = null;
+
+    // お気に入りリストの表示
+    function displayFavorites() {
+      const listEl = document.getElementById('favorites-list');
+      if (!listEl) return;
+
+      const stored = localStorage.getItem('alarmPatterns');
+      const patterns: AlarmPattern[] = stored ? JSON.parse(stored) : [];
+
+      if (patterns.length === 0) {
+        listEl.innerHTML = '<p class="empty-message">登録されたパターンがありません</p>';
+        return;
+      }
+
+      listEl.innerHTML = patterns.map(pattern => `
+        <div class="favorite-item">
+          <label class="toggle-switch">
+            <input type="checkbox" ${pattern.isActive ? 'checked' : ''} data-id="${pattern.id}" class="toggle-active">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="favorite-info">
+            <div class="favorite-label">${pattern.label}</div>
+            <div class="favorite-times">${pattern.wakeUpTime} → ${pattern.departureTime}</div>
+            ${pattern.repeatDays.length > 0 ? `<div class="favorite-times">${pattern.repeatDays.map(d => WEEKDAYS[d]).join(', ')}</div>` : ''}
+          </div>
+          <div class="favorite-actions">
+            <button class="icon-btn edit" data-id="${pattern.id}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </button>
+            <button class="icon-btn delete" data-id="${pattern.id}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      // イベントリスナーを追加
+      document.querySelectorAll('.toggle-active').forEach(toggle => {
+        toggle.addEventListener('change', handleToggle);
+      });
+
+      document.querySelectorAll('.edit').forEach(btn => {
+        btn.addEventListener('click', handleEdit);
+      });
+
+      document.querySelectorAll('.delete').forEach(btn => {
+        btn.addEventListener('click', handleDelete);
+      });
+    }
+
+    // アクティブ切り替え
+    function handleToggle(e: Event) {
+      const target = e.target as HTMLInputElement;
+      const id = target.dataset.id;
+      if (!id) return;
+
+      const stored = localStorage.getItem('alarmPatterns');
+      const patterns: AlarmPattern[] = stored ? JSON.parse(stored) : [];
+
+      const updatedPatterns = patterns.map(p => ({
+        ...p,
+        isActive: p.id === id ? target.checked : false
+      }));
+
+      localStorage.setItem('alarmPatterns', JSON.stringify(updatedPatterns));
+      displayFavorites();
+
+      // セッションストレージをクリア（通知の再設定のため）
+      sessionStorage.clear();
+    }
+
+    // 編集
+    function handleEdit(e: Event) {
+      const btn = e.currentTarget as HTMLButtonElement;
+      const id = btn.dataset.id;
+      if (!id) return;
+
+      const stored = localStorage.getItem('alarmPatterns');
+      const patterns: AlarmPattern[] = stored ? JSON.parse(stored) : [];
+      const pattern = patterns.find(p => p.id === id);
+
+      if (!pattern) return;
+
+      editingId = id;
+      (document.getElementById('modal-title') as HTMLHeadingElement).textContent = 'アラーム編集';
+      (document.getElementById('edit-id') as HTMLInputElement).value = id;
+      (document.getElementById('label') as HTMLInputElement).value = pattern.label;
+      (document.getElementById('wake-time') as HTMLInputElement).value = pattern.wakeUpTime;
+      (document.getElementById('departure-time') as HTMLInputElement).value = pattern.departureTime;
+
+      // 通知間隔の復元
+      NOTIFICATION_INTERVALS.forEach(interval => {
+        const checkbox = document.querySelector(`input[value="${interval}"]`) as HTMLInputElement;
+        if (checkbox) {
+          checkbox.checked = pattern.notificationIntervals.includes(interval);
+        }
+      });
+
+      // 繰り返し曜日の復元
+      document.querySelectorAll('.weekday-btn').forEach((btn, index) => {
+        if (pattern.repeatDays.includes(index)) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      showModal();
+    }
+
+    // 削除
+    function handleDelete(e: Event) {
+      const btn = e.currentTarget as HTMLButtonElement;
+      const id = btn.dataset.id;
+      if (!id) return;
+
+      if (!confirm('このアラームを削除しますか?')) return;
+
+      const stored = localStorage.getItem('alarmPatterns');
+      const patterns: AlarmPattern[] = stored ? JSON.parse(stored) : [];
+      const filtered = patterns.filter(p => p.id !== id);
+
+      localStorage.setItem('alarmPatterns', JSON.stringify(filtered));
+      displayFavorites();
+    }
+
+    // モーダル表示
+    function showModal() {
+      const modal = document.getElementById('alarm-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    // モーダル非表示
+    function hideModal() {
+      const modal = document.getElementById('alarm-modal');
+      if (modal) modal.style.display = 'none';
+      resetForm();
+    }
+
+    // フォームリセット
+    function resetForm() {
+      editingId = null;
+      (document.getElementById('alarm-form') as HTMLFormElement).reset();
+      (document.getElementById('modal-title') as HTMLHeadingElement).textContent = '新規アラーム';
+      (document.getElementById('edit-id') as HTMLInputElement).value = '';
+      document.querySelectorAll('.weekday-btn').forEach(btn => btn.classList.remove('active'));
+      const errorMsg = document.getElementById('error-message');
+      if (errorMsg) errorMsg.style.display = 'none';
+    }
+
+    // フォーム初期化
+    function initForm() {
+      // 通知間隔チェックボックス
+      const intervalsGrid = document.getElementById('intervals-grid');
+      if (intervalsGrid) {
+        intervalsGrid.innerHTML = NOTIFICATION_INTERVALS.map(interval => `
+          <label class="checkbox-item">
+            <input type="checkbox" value="${interval}" ${[30, 10, 5, 1].includes(interval) ? 'checked' : ''}>
+            <span>${interval}分前</span>
+          </label>
+        `).join('');
+      }
+
+      // 曜日ボタン
+      const weekdayButtons = document.getElementById('weekday-buttons');
+      if (weekdayButtons) {
+        weekdayButtons.innerHTML = WEEKDAYS.map((day, index) => `
+          <button type="button" class="weekday-btn" data-day="${index}">${day}</button>
+        `).join('');
+
+        weekdayButtons.querySelectorAll('.weekday-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            btn.classList.toggle('active');
+          });
+        });
+      }
+    }
+
+    // フォーム送信
+    function handleSubmit(e: Event) {
+      e.preventDefault();
+
+      const label = (document.getElementById('label') as HTMLInputElement).value;
+      const wakeTime = (document.getElementById('wake-time') as HTMLInputElement).value;
+      const departureTime = (document.getElementById('departure-time') as HTMLInputElement).value;
+
+      // バリデーション
+      if (wakeTime >= departureTime) {
+        const errorMsg = document.getElementById('error-message');
+        if (errorMsg) {
+          errorMsg.textContent = 'めざまし時刻はおでかけ時刻より前に設定してください';
+          errorMsg.style.display = 'block';
+        }
+        return;
+      }
+
+      // 通知間隔の取得
+      const intervals: number[] = [];
+      document.querySelectorAll('#intervals-grid input:checked').forEach(input => {
+        intervals.push(parseInt((input as HTMLInputElement).value));
+      });
+
+      // 繰り返し曜日の取得
+      const repeatDays: number[] = [];
+      document.querySelectorAll('.weekday-btn.active').forEach(btn => {
+        repeatDays.push(parseInt((btn as HTMLButtonElement).dataset.day || '0'));
+      });
+
+      const stored = localStorage.getItem('alarmPatterns');
+      const patterns: AlarmPattern[] = stored ? JSON.parse(stored) : [];
+
+      if (editingId) {
+        // 編集
+        const index = patterns.findIndex(p => p.id === editingId);
+        if (index !== -1) {
+          patterns[index] = {
+            ...patterns[index],
+            label,
+            wakeUpTime: wakeTime,
+            departureTime: departureTime,
+            notificationIntervals: intervals,
+            repeatDays,
+            updatedAt: new Date().toISOString()
+          };
+        }
+      } else {
+        // 新規作成
+        const newPattern: AlarmPattern = {
+          id: Date.now().toString(),
+          label,
+          wakeUpTime: wakeTime,
+          departureTime: departureTime,
+          notificationIntervals: intervals,
+          repeatDays,
+          isActive: patterns.length === 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        patterns.push(newPattern);
+      }
+
+      localStorage.setItem('alarmPatterns', JSON.stringify(patterns));
+      hideModal();
+      displayFavorites();
+    }
+
+    // イベントリスナー設定
+    document.getElementById('new-alarm-btn')?.addEventListener('click', () => {
+      resetForm();
+      showModal();
+    });
+
+    document.getElementById('close-modal')?.addEventListener('click', hideModal);
+    document.getElementById('cancel-btn')?.addEventListener('click', hideModal);
+    document.getElementById('alarm-form')?.addEventListener('submit', handleSubmit);
+
+    // モーダル外クリックで閉じる
+    document.getElementById('alarm-modal')?.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        hideModal();
+      }
+    });
+
+    // 初期化
+    initForm();
+    displayFavorites();
+  </script>
+</Layout>
