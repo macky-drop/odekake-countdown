@@ -4,46 +4,49 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="おでかけカウントダウンアプリ" activeTab="home">
   <div class="home-container">
-    <h1 class="app-title">おでかけカウントダウン</h1>
-    
-    <!-- 日付・時刻表示 -->
+    <!-- 1段目: 日付・時刻表示 -->
     <div class="card datetime-card">
-      <div class="date" id="current-date">2026年1月2日</div>
-      <div class="time" id="current-time">00:00:00</div>
+      <div class="date" id="current-date">2026年1月2日 (Thu)</div>
+      <div class="time-display">
+        <span class="time-hm" id="current-time-hm">00:00</span>
+        <span class="time-s" id="current-time-s">:00</span>
+      </div>
     </div>
 
-    <!-- アラーム状況 -->
+    <!-- 2段目: アラーム状況 -->
     <div class="card alarm-status" id="alarm-status">
-      <h2 class="section-title">アラーム設定状況</h2>
+      <h2 class="section-title">アラーム</h2>
       <div id="alarm-info" class="alarm-info">
-        <p class="no-alarm">アラームが設定されていません</p>
+        <p class="no-alarm">未設定</p>
       </div>
     </div>
 
-    <!-- カウントダウン表示 -->
+    <!-- 3段目: カウントダウン表示 -->
     <div class="card countdown-card" id="countdown-card" style="display: none;">
-      <h2 class="section-title">カウントダウン</h2>
-      <div class="countdown-display" id="countdown-display">
-        <div class="countdown-time">--:--:--</div>
-        <div class="countdown-label">おでかけまで</div>
+      <h2 class="section-title">おでかけまで</h2>
+      <div class="countdown-display">
+        <div class="countdown-time" id="countdown-time">00:00:00</div>
       </div>
     </div>
 
-    <!-- 天気情報 -->
+    <!-- 4段目: 天気情報 -->
     <div class="card weather-card">
-      <h2 class="section-title">現在地の天気</h2>
+      <h2 class="section-title">天気情報</h2>
       <div id="weather-info" class="weather-info">
         <div class="loading">読み込み中...</div>
       </div>
-    </div>
-
-    <!-- テストボタン（デバッグ用） -->
-    <div class="card">
-      <h2 class="section-title">通知テスト</h2>
-      <button class="btn btn-secondary btn-full" id="check-permission">通知許可状態を確認</button>
-      <button class="btn btn-secondary btn-full" id="test-notification">通知をテスト</button>
-      <button class="btn btn-secondary btn-full" id="test-speech">音声をテスト</button>
-      <div id="test-result" style="margin-top: 1rem; padding: 0.75rem; background: #f0f0f0; border-radius: 6px; display: none;"></div>
+      <div class="location-selector">
+        <select id="location-select" class="location-select">
+          <option value="gps">現在地 (GPS)</option>
+          <option value="35.6762,139.6503">東京</option>
+          <option value="34.6937,135.5023">大阪</option>
+          <option value="35.0116,135.7681">京都</option>
+          <option value="35.4437,139.6380">横浜</option>
+          <option value="43.0642,141.3469">札幌</option>
+          <option value="33.5904,130.4017">福岡</option>
+          <option value="26.2124,127.6809">那覇</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -51,16 +54,16 @@ import Layout from '../layouts/Layout.astro';
     .home-container {
       max-width: 600px;
       margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
     }
 
-    .app-title {
-      font-size: 1.75rem;
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-      color: var(--color-primary);
-      text-align: center;
+    .card {
+      padding: 1rem;
     }
 
+    /* 1段目: 日付・時刻 */
     .datetime-card {
       text-align: center;
       background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
@@ -68,68 +71,86 @@ import Layout from '../layouts/Layout.astro';
     }
 
     .date {
-      font-size: 1.125rem;
+      font-size: 1rem;
       font-weight: 500;
       margin-bottom: 0.5rem;
     }
 
-    .time {
-      font-size: 2.5rem;
-      font-weight: 700;
+    .time-display {
+      display: flex;
+      justify-content: center;
+      align-items: baseline;
       font-variant-numeric: tabular-nums;
     }
 
-    .section-title {
-      font-size: 1.125rem;
+    .time-hm {
+      font-size: 3rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .time-s {
+      font-size: 1.5rem;
       font-weight: 600;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      margin-left: 0.1rem;
+    }
+
+    /* 2段目: アラーム */
+    .alarm-status {
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .alarm-status:hover {
+      background: #f8fafc;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      text-align: center;
     }
 
     .alarm-info {
-      cursor: pointer;
-      transition: background 0.2s;
-      padding: 1rem;
-      border-radius: 8px;
-    }
-
-    .alarm-info:hover {
-      background: var(--color-background);
+      text-align: center;
     }
 
     .no-alarm {
       color: var(--color-text-secondary);
-      text-align: center;
+      font-size: 0.875rem;
+      margin: 0;
     }
 
     .alarm-details {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.5rem;
+      font-size: 0.875rem;
     }
 
     .alarm-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.5rem;
+      padding: 0.4rem 0.75rem;
       background: var(--color-background);
       border-radius: 6px;
     }
 
     .alarm-label {
       font-weight: 600;
-      color: var(--color-text);
+      color: var(--color-text-secondary);
+      font-size: 0.8rem;
     }
 
     .alarm-time {
-      font-size: 1.25rem;
+      font-size: 1rem;
       font-weight: 700;
       color: var(--color-primary);
     }
 
+    /* 3段目: カウントダウン */
     .countdown-card {
       background: linear-gradient(135deg, var(--color-secondary) 0%, #059669 100%);
       color: white;
@@ -143,18 +164,16 @@ import Layout from '../layouts/Layout.astro';
       font-size: 3rem;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
-      margin-bottom: 0.5rem;
+      line-height: 1;
     }
 
-    .countdown-label {
-      font-size: 1.125rem;
-      opacity: 0.9;
-    }
-
+    /* 4段目: 天気 */
     .weather-info {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 1rem;
+      min-height: 60px;
     }
 
     .loading {
@@ -166,45 +185,66 @@ import Layout from '../layouts/Layout.astro';
     .weather-display {
       display: flex;
       align-items: center;
-      gap: 1.5rem;
+      gap: 1rem;
       width: 100%;
+      justify-content: center;
     }
 
     .weather-icon {
-      font-size: 3rem;
+      font-size: 2.5rem;
     }
 
     .weather-details {
-      flex: 1;
+      text-align: left;
+    }
+
+    .weather-condition {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
     }
 
     .weather-temp {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--color-primary);
-    }
-
-    .weather-desc {
+      font-size: 0.875rem;
       color: var(--color-text-secondary);
-      margin-top: 0.25rem;
     }
 
-    .btn-full {
+    .location-selector {
+      margin-top: 0.75rem;
+    }
+
+    .location-select {
       width: 100%;
-      margin-bottom: 0.5rem;
+      padding: 0.5rem;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-size: 0.875rem;
     }
 
     @media (max-width: 640px) {
-      .app-title {
-        font-size: 1.5rem;
+      .home-container {
+        gap: 0.5rem;
       }
 
-      .time {
-        font-size: 2rem;
+      .card {
+        padding: 0.75rem;
+      }
+
+      .time-hm {
+        font-size: 2.5rem;
+      }
+
+      .time-s {
+        font-size: 1.25rem;
       }
 
       .countdown-time {
         font-size: 2.5rem;
+      }
+
+      .section-title {
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
       }
     }
   </style>
@@ -212,26 +252,29 @@ import Layout from '../layouts/Layout.astro';
   <script>
     import type { AlarmPattern, WeatherData } from '../types';
 
+    const WEEKDAY_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
     // 現在時刻の更新
     function updateDateTime() {
       const now = new Date();
       const dateEl = document.getElementById('current-date');
-      const timeEl = document.getElementById('current-time');
+      const timeHmEl = document.getElementById('current-time-hm');
+      const timeSEl = document.getElementById('current-time-s');
       
       if (dateEl) {
-        dateEl.textContent = now.toLocaleDateString('ja-JP', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        const day = now.getDate();
+        const weekday = WEEKDAY_EN[now.getDay()];
+        dateEl.textContent = `${year}年${month}月${day}日 (${weekday})`;
       }
       
-      if (timeEl) {
-        timeEl.textContent = now.toLocaleTimeString('ja-JP', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
+      if (timeHmEl && timeSEl) {
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        timeHmEl.textContent = `${hours}:${minutes}`;
+        timeSEl.textContent = `:${seconds}`;
       }
     }
 
@@ -242,7 +285,7 @@ import Layout from '../layouts/Layout.astro';
 
       const stored = localStorage.getItem('alarmPatterns');
       if (!stored) {
-        alarmInfoEl.innerHTML = '<p class="no-alarm">アラームが設定されていません</p>';
+        alarmInfoEl.innerHTML = '<p class="no-alarm">未設定</p>';
         return;
       }
 
@@ -250,10 +293,12 @@ import Layout from '../layouts/Layout.astro';
       const activePattern = patterns.find(p => p.isActive);
 
       if (!activePattern) {
-        alarmInfoEl.innerHTML = '<p class="no-alarm">アラームが設定されていません</p>';
+        alarmInfoEl.innerHTML = '<p class="no-alarm">未設定</p>';
         return;
       }
 
+      const wakeTimeDisplay = activePattern.wakeUpTime || 'OFF';
+      
       alarmInfoEl.innerHTML = `
         <div class="alarm-details">
           <div class="alarm-item">
@@ -262,7 +307,7 @@ import Layout from '../layouts/Layout.astro';
           </div>
           <div class="alarm-item">
             <span class="alarm-label">めざまし</span>
-            <span class="alarm-time">${activePattern.wakeUpTime}</span>
+            <span class="alarm-time">${wakeTimeDisplay}</span>
           </div>
           <div class="alarm-item">
             <span class="alarm-label">おでかけ</span>
@@ -271,22 +316,20 @@ import Layout from '../layouts/Layout.astro';
         </div>
       `;
 
-      // カウントダウンの更新
       updateCountdown(activePattern);
     }
 
     // カウントダウンの更新
     function updateCountdown(pattern: AlarmPattern) {
       const countdownCard = document.getElementById('countdown-card');
-      const countdownDisplay = document.getElementById('countdown-display');
-      if (!countdownCard || !countdownDisplay) return;
+      const countdownTime = document.getElementById('countdown-time');
+      if (!countdownCard || !countdownTime) return;
 
       const now = new Date();
       const [hours, minutes] = pattern.departureTime.split(':').map(Number);
       const target = new Date(now);
       target.setHours(hours, minutes, 0, 0);
 
-      // 翌日の判定
       if (target < now) {
         target.setDate(target.getDate() + 1);
       }
@@ -294,8 +337,7 @@ import Layout from '../layouts/Layout.astro';
       const diff = target.getTime() - now.getTime();
       
       if (diff <= 0) {
-        // おでかけ時刻になった
-        checkAndNotify(0); // 0分 = おでかけ時刻
+        checkAndNotify(0);
         countdownCard.style.display = 'none';
         return;
       }
@@ -304,23 +346,20 @@ import Layout from '../layouts/Layout.astro';
       const minutes_left = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds_left = Math.floor((diff % (1000 * 60)) / 1000);
 
-      countdownDisplay.innerHTML = `
-        <div class="countdown-time">${String(hours_left).padStart(2, '0')}:${String(minutes_left).padStart(2, '0')}:${String(seconds_left).padStart(2, '0')}</div>
-        <div class="countdown-label">おでかけまで</div>
-      `;
-      
+      countdownTime.textContent = `${String(hours_left).padStart(2, '0')}:${String(minutes_left).padStart(2, '0')}:${String(seconds_left).padStart(2, '0')}`;
       countdownCard.style.display = 'block';
 
-      // 通知チェック（秒数を考慮して正確なタイミングで通知）
-      // セッションストレージで「すでに通知済み」をチェック
+      // 通知チェック（正確なタイミング）
       const totalSeconds = Math.floor(diff / 1000);
-      const totalMinutes = Math.floor(totalSeconds / 60);
-      const remainingSeconds = totalSeconds % 60;
       
-      // ちょうど◯分00秒～◯分59秒の間で、まだ通知していない場合のみ通知
-      if (pattern.notificationIntervals.includes(totalMinutes) && remainingSeconds >= 0) {
-        checkAndNotify(totalMinutes);
-      }
+      // 各通知間隔に対して、ちょうどその時刻になったら通知
+      pattern.notificationIntervals.forEach(interval => {
+        const targetSeconds = interval * 60;
+        // targetSecondsちょうど、またはtargetSeconds-1秒の時に通知
+        if (totalSeconds === targetSeconds || totalSeconds === targetSeconds - 1) {
+          checkAndNotify(interval);
+        }
+      });
     }
 
     // 通知処理
@@ -331,24 +370,19 @@ import Layout from '../layouts/Layout.astro';
       sessionStorage.setItem(`notified_${minutesLeft}`, 'true');
 
       const settings = JSON.parse(localStorage.getItem('settings') || '{"soundEnabled":true}');
-
-      // iOS判定
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
       if (minutesLeft === 0) {
         // おでかけ時刻
         if (isIOS) {
-          // iOS: 音声 + ビジュアルアラート
           if (settings.soundEnabled && 'speechSynthesis' in window) {
             const utterance = new SpeechSynthesisUtterance('おでかけの時間です！いってらっしゃい！');
             utterance.lang = 'ja-JP';
             utterance.volume = 1.0;
             speechSynthesis.speak(utterance);
           }
-          // 全画面アラート表示
           showVisualAlert('🚶 おでかけの時間です！', 'いってらっしゃい！');
         } else {
-          // PC/Android: ブラウザ通知
           if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('おでかけの時間です！', {
               body: 'いってらっしゃい！',
@@ -373,10 +407,8 @@ import Layout from '../layouts/Layout.astro';
         }
 
         if (isIOS) {
-          // iOS: ビジュアルアラート（控えめ）
           showVisualAlert('⏰ カウントダウン', `おでかけ${minutesLeft}分前です`, 3000);
         } else {
-          // PC/Android: ブラウザ通知
           if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('おでかけカウントダウン', {
               body: `おでかけ${minutesLeft}分前です`,
@@ -390,7 +422,6 @@ import Layout from '../layouts/Layout.astro';
 
     // ビジュアルアラート表示（iOS用）
     function showVisualAlert(title: string, message: string, duration: number = 0) {
-      // 既存のアラートを削除
       const existing = document.getElementById('visual-alert');
       if (existing) existing.remove();
 
@@ -451,7 +482,6 @@ import Layout from '../layouts/Layout.astro';
       `;
       document.body.appendChild(alert);
 
-      // 自動で閉じる（duration > 0の場合）
       if (duration > 0) {
         setTimeout(() => {
           alert.remove();
@@ -459,36 +489,55 @@ import Layout from '../layouts/Layout.astro';
       }
     }
 
-    // 天気情報の取得
+    // 天気情報の取得（Open-Meteo）
     async function fetchWeather() {
       const weatherInfoEl = document.getElementById('weather-info');
+      const locationSelect = document.getElementById('location-select') as HTMLSelectElement;
       if (!weatherInfoEl) return;
 
       try {
-        if (!('geolocation' in navigator)) {
-          throw new Error('位置情報が利用できません');
+        let lat: number, lon: number;
+
+        if (locationSelect.value === 'gps') {
+          if (!('geolocation' in navigator)) {
+            throw new Error('位置情報が利用できません');
+          }
+
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject);
+          });
+
+          lat = position.coords.latitude;
+          lon = position.coords.longitude;
+        } else {
+          [lat, lon] = locationSelect.value.split(',').map(Number);
         }
 
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject);
-        });
+        // Open-Meteo API
+        const response = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia/Tokyo`
+        );
 
-        const { latitude, longitude } = position.coords;
+        if (!response.ok) throw new Error('天気情報の取得に失敗しました');
+
+        const data = await response.json();
         
-        // OpenWeatherMap APIキーは環境変数から取得（本番環境ではサーバーサイドで処理）
-        // ここではダミーデータを表示
-        const weatherData: WeatherData = {
-          temp: 8,
-          description: '晴れ',
-          icon: '☀️'
-        };
+        // 天気コードをアイコンに変換
+        const weatherCode = data.current.weather_code;
+        const weatherIcon = getWeatherIcon(weatherCode);
+        const weatherDesc = getWeatherDescription(weatherCode);
+        
+        const currentTemp = Math.round(data.current.temperature_2m);
+        const maxTemp = Math.round(data.daily.temperature_2m_max[0]);
+        const minTemp = Math.round(data.daily.temperature_2m_min[0]);
 
         weatherInfoEl.innerHTML = `
           <div class="weather-display">
-            <div class="weather-icon">${weatherData.icon}</div>
+            <div class="weather-icon">${weatherIcon}</div>
             <div class="weather-details">
-              <div class="weather-temp">${weatherData.temp}℃</div>
-              <div class="weather-desc">${weatherData.description}</div>
+              <div class="weather-condition">${weatherDesc}</div>
+              <div class="weather-temp">現在: ${currentTemp}℃</div>
+              <div class="weather-temp">最高: ${maxTemp}℃ / 最低: ${minTemp}℃</div>
             </div>
           </div>
         `;
@@ -496,11 +545,37 @@ import Layout from '../layouts/Layout.astro';
         weatherInfoEl.innerHTML = `
           <div class="weather-display">
             <div class="weather-details">
-              <div class="weather-desc">天気情報を取得できませんでした</div>
+              <div class="weather-condition">天気情報を取得できませんでした</div>
             </div>
           </div>
         `;
       }
+    }
+
+    // 天気コードからアイコンを取得
+    function getWeatherIcon(code: number): string {
+      if (code === 0) return '☀️';
+      if (code <= 3) return '⛅';
+      if (code <= 48) return '🌫️';
+      if (code <= 67) return '🌧️';
+      if (code <= 77) return '🌨️';
+      if (code <= 82) return '🌧️';
+      if (code <= 86) return '🌨️';
+      return '⛈️';
+    }
+
+    // 天気コードから説明を取得
+    function getWeatherDescription(code: number): string {
+      if (code === 0) return '快晴';
+      if (code === 1) return '晴れ';
+      if (code === 2) return '一部曇り';
+      if (code === 3) return '曇り';
+      if (code <= 48) return '霧';
+      if (code <= 67) return '雨';
+      if (code <= 77) return '雪';
+      if (code <= 82) return '強い雨';
+      if (code <= 86) return '強い雪';
+      return '雷雨';
     }
 
     // アラーム設定エリアのクリックイベント
@@ -511,151 +586,11 @@ import Layout from '../layouts/Layout.astro';
       });
     }
 
-    // テストボタンのイベントリスナー
-    const testResult = document.getElementById('test-result');
-
-    // 通知許可状態の確認
-    document.getElementById('check-permission')?.addEventListener('click', () => {
-      if (!testResult) return;
-      testResult.style.display = 'block';
-
-      if (!('Notification' in window)) {
-        testResult.innerHTML = `
-          <strong>❌ 通知非対応</strong><br>
-          このブラウザは通知APIをサポートしていません。<br>
-          <small>ブラウザ: ${navigator.userAgent}</small>
-        `;
-        testResult.style.background = '#fee';
-        return;
-      }
-
-      const permission = Notification.permission;
-      let message = '';
-      let bgColor = '';
-
-      switch (permission) {
-        case 'granted':
-          message = `
-            <strong>✅ 通知が許可されています</strong><br>
-            現在の状態: ${permission}<br>
-            通知は正常に動作するはずです。
-          `;
-          bgColor = '#d1fae5';
-          break;
-        case 'denied':
-          message = `
-            <strong>❌ 通知がブロックされています</strong><br>
-            現在の状態: ${permission}<br>
-            <br>
-            <strong>解決方法:</strong><br>
-            1. アドレスバー左の🔒アイコンをクリック<br>
-            2. 「通知」を「許可」に変更<br>
-            3. ページをリロード
-          `;
-          bgColor = '#fee';
-          break;
-        case 'default':
-          message = `
-            <strong>📋 通知許可が未設定</strong><br>
-            現在の状態: ${permission}<br>
-            「通知をテスト」ボタンで許可リクエストが表示されます。
-          `;
-          bgColor = '#fffbeb';
-          break;
-      }
-
-      testResult.innerHTML = message;
-      testResult.style.background = bgColor;
-    });
-
-    document.getElementById('test-notification')?.addEventListener('click', async () => {
-      if (!testResult) return;
-      testResult.style.display = 'block';
-
-      // 通知許可のチェック
-      if (!('Notification' in window)) {
-        testResult.textContent = '❌ このブラウザは通知をサポートしていません';
-        testResult.style.background = '#fee';
-        return;
-      }
-
-      if (Notification.permission === 'denied') {
-        testResult.textContent = '❌ 通知が拒否されています。ブラウザの設定から許可してください';
-        testResult.style.background = '#fee';
-        return;
-      }
-
-      if (Notification.permission === 'default') {
-        testResult.textContent = '📋 通知許可をリクエスト中...';
-        testResult.style.background = '#fffbeb';
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-          testResult.textContent = '❌ 通知が許可されませんでした';
-          testResult.style.background = '#fee';
-          return;
-        }
-      }
-
-      // 通知を送信
-      try {
-        const notification = new Notification('テスト通知', {
-          body: 'おでかけカウントダウンアプリからのテスト通知です',
-          icon: '/favicon.svg',
-          tag: 'test-notification',
-          requireInteraction: false,
-          vibrate: [200, 100, 200]
-        });
-
-        testResult.textContent = '✅ 通知を送信しました！通知が表示されましたか？';
-        testResult.style.background = '#d1fae5';
-
-        notification.onclick = () => {
-          testResult.textContent = '✅ 通知がクリックされました！';
-        };
-      } catch (error) {
-        testResult.textContent = `❌ エラー: ${error}`;
-        testResult.style.background = '#fee';
-      }
-    });
-
-    document.getElementById('test-speech')?.addEventListener('click', () => {
-      if (!testResult) return;
-      testResult.style.display = 'block';
-
-      if (!('speechSynthesis' in window)) {
-        testResult.textContent = '❌ このブラウザは音声合成をサポートしていません';
-        testResult.style.background = '#fee';
-        return;
-      }
-
-      try {
-        const utterance = new SpeechSynthesisUtterance('おでかけ1分前です');
-        utterance.lang = 'ja-JP';
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
-        utterance.volume = 1.0;
-
-        utterance.onstart = () => {
-          testResult.textContent = '🔊 音声を再生中...';
-          testResult.style.background = '#dbeafe';
-        };
-
-        utterance.onend = () => {
-          testResult.textContent = '✅ 音声再生が完了しました！聞こえましたか？';
-          testResult.style.background = '#d1fae5';
-        };
-
-        utterance.onerror = (event) => {
-          testResult.textContent = `❌ 音声エラー: ${event.error}`;
-          testResult.style.background = '#fee';
-        };
-
-        speechSynthesis.speak(utterance);
-      } catch (error) {
-        testResult.textContent = `❌ エラー: ${error}`;
-        testResult.style.background = '#fee';
-      }
-    });
+    // 地域選択の変更イベント
+    const locationSelect = document.getElementById('location-select');
+    if (locationSelect) {
+      locationSelect.addEventListener('change', fetchWeather);
+    }
 
     // 初期化
     updateDateTime();
