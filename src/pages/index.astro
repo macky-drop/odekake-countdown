@@ -40,6 +40,7 @@ import Layout from '../layouts/Layout.astro';
     <!-- テストボタン（デバッグ用） -->
     <div class="card">
       <h2 class="section-title">通知テスト</h2>
+      <button class="btn btn-secondary btn-full" id="check-permission">通知許可状態を確認</button>
       <button class="btn btn-secondary btn-full" id="test-notification">通知をテスト</button>
       <button class="btn btn-secondary btn-full" id="test-speech">音声をテスト</button>
       <div id="test-result" style="margin-top: 1rem; padding: 0.75rem; background: #f0f0f0; border-radius: 6px; display: none;"></div>
@@ -310,10 +311,14 @@ import Layout from '../layouts/Layout.astro';
       
       countdownCard.style.display = 'block';
 
-      // 通知チェック
-      const minutesLeft = Math.floor(diff / (1000 * 60));
-      if (pattern.notificationIntervals.includes(minutesLeft)) {
-        checkAndNotify(minutesLeft);
+      // 通知チェック（秒数を考慮して正確なタイミングで通知）
+      // 例: 1分前 = 残り60秒～59秒の間に1回だけ通知
+      const totalSeconds = Math.floor(diff / 1000);
+      const totalMinutes = Math.floor(totalSeconds / 60);
+      
+      if (pattern.notificationIntervals.includes(totalMinutes) && seconds_left >= 59) {
+        // 59秒以上の時だけ通知（ちょうど◯分00秒～◯分01秒の間）
+        checkAndNotify(totalMinutes);
       }
     }
 
@@ -326,32 +331,130 @@ import Layout from '../layouts/Layout.astro';
 
       const settings = JSON.parse(localStorage.getItem('settings') || '{"soundEnabled":true}');
 
+      // iOS判定
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
       if (minutesLeft === 0) {
-        // おでかけ時刻: ブラウザ通知（スマホのデフォルト音が鳴る）
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('おでかけの時間です！', {
-            body: 'いってらっしゃい！',
-            icon: '/favicon.svg',
-            tag: 'departure-alarm',
-            requireInteraction: true, // ユーザーが閉じるまで表示
-            vibrate: [200, 100, 200] // バイブレーション
-          });
+        // おでかけ時刻
+        if (isIOS) {
+          // iOS: 音声 + ビジュアルアラート
+          if (settings.soundEnabled && 'speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance('おでかけの時間です！いってらっしゃい！');
+            utterance.lang = 'ja-JP';
+            utterance.volume = 1.0;
+            speechSynthesis.speak(utterance);
+          }
+          // 全画面アラート表示
+          showVisualAlert('🚶 おでかけの時間です！', 'いってらっしゃい！');
+        } else {
+          // PC/Android: ブラウザ通知
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('おでかけの時間です！', {
+              body: 'いってらっしゃい！',
+              icon: '/favicon.svg',
+              tag: 'departure-alarm',
+              requireInteraction: true,
+              vibrate: [200, 100, 200]
+            });
+          }
+          if (settings.soundEnabled && 'speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance('おでかけの時間です');
+            utterance.lang = 'ja-JP';
+            speechSynthesis.speak(utterance);
+          }
         }
       } else {
-        // カウントダウン通知: 音声 + ブラウザ通知
+        // カウントダウン通知
         if (settings.soundEnabled && 'speechSynthesis' in window) {
           const utterance = new SpeechSynthesisUtterance(`おでかけ${minutesLeft}分前です`);
           utterance.lang = 'ja-JP';
           speechSynthesis.speak(utterance);
         }
 
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('おでかけカウントダウン', {
-            body: `おでかけ${minutesLeft}分前です`,
-            icon: '/favicon.svg',
-            tag: `countdown-${minutesLeft}`
-          });
+        if (isIOS) {
+          // iOS: ビジュアルアラート（控えめ）
+          showVisualAlert('⏰ カウントダウン', `おでかけ${minutesLeft}分前です`, 3000);
+        } else {
+          // PC/Android: ブラウザ通知
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('おでかけカウントダウン', {
+              body: `おでかけ${minutesLeft}分前です`,
+              icon: '/favicon.svg',
+              tag: `countdown-${minutesLeft}`
+            });
+          }
         }
+      }
+    }
+
+    // ビジュアルアラート表示（iOS用）
+    function showVisualAlert(title: string, message: string, duration: number = 0) {
+      // 既存のアラートを削除
+      const existing = document.getElementById('visual-alert');
+      if (existing) existing.remove();
+
+      const alert = document.createElement('div');
+      alert.id = 'visual-alert';
+      alert.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: white;
+          padding: 2rem;
+          border-radius: 16px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+          z-index: 10000;
+          text-align: center;
+          min-width: 280px;
+          max-width: 90vw;
+          animation: slideIn 0.3s ease-out;
+        ">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">${title.split(' ')[0]}</div>
+          <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">${title.split(' ').slice(1).join(' ')}</div>
+          <div style="font-size: 1rem; color: #666;">${message}</div>
+          <button onclick="this.closest('#visual-alert').remove()" style="
+            margin-top: 1.5rem;
+            padding: 0.75rem 2rem;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+          ">確認</button>
+        </div>
+        <div onclick="this.closest('#visual-alert').remove()" style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.5);
+          z-index: 9999;
+        "></div>
+        <style>
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translate(-50%, -60%);
+            }
+            to {
+              opacity: 1;
+              transform: translate(-50%, -50%);
+            }
+          }
+        </style>
+      `;
+      document.body.appendChild(alert);
+
+      // 自動で閉じる（duration > 0の場合）
+      if (duration > 0) {
+        setTimeout(() => {
+          alert.remove();
+        }, duration);
       }
     }
 
@@ -409,6 +512,60 @@ import Layout from '../layouts/Layout.astro';
 
     // テストボタンのイベントリスナー
     const testResult = document.getElementById('test-result');
+
+    // 通知許可状態の確認
+    document.getElementById('check-permission')?.addEventListener('click', () => {
+      if (!testResult) return;
+      testResult.style.display = 'block';
+
+      if (!('Notification' in window)) {
+        testResult.innerHTML = `
+          <strong>❌ 通知非対応</strong><br>
+          このブラウザは通知APIをサポートしていません。<br>
+          <small>ブラウザ: ${navigator.userAgent}</small>
+        `;
+        testResult.style.background = '#fee';
+        return;
+      }
+
+      const permission = Notification.permission;
+      let message = '';
+      let bgColor = '';
+
+      switch (permission) {
+        case 'granted':
+          message = `
+            <strong>✅ 通知が許可されています</strong><br>
+            現在の状態: ${permission}<br>
+            通知は正常に動作するはずです。
+          `;
+          bgColor = '#d1fae5';
+          break;
+        case 'denied':
+          message = `
+            <strong>❌ 通知がブロックされています</strong><br>
+            現在の状態: ${permission}<br>
+            <br>
+            <strong>解決方法:</strong><br>
+            1. アドレスバー左の🔒アイコンをクリック<br>
+            2. 「通知」を「許可」に変更<br>
+            3. ページをリロード
+          `;
+          bgColor = '#fee';
+          break;
+        case 'default':
+          message = `
+            <strong>📋 通知許可が未設定</strong><br>
+            現在の状態: ${permission}<br>
+            「通知をテスト」ボタンで許可リクエストが表示されます。
+          `;
+          bgColor = '#fffbeb';
+          break;
+      }
+
+      testResult.innerHTML = message;
+      testResult.style.background = bgColor;
+    });
 
     document.getElementById('test-notification')?.addEventListener('click', async () => {
       if (!testResult) return;
@@ -471,7 +628,7 @@ import Layout from '../layouts/Layout.astro';
       }
 
       try {
-        const utterance = new SpeechSynthesisUtterance('おでかけ5分前です');
+        const utterance = new SpeechSynthesisUtterance('おでかけ1分前です');
         utterance.lang = 'ja-JP';
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
