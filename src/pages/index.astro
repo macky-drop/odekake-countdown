@@ -331,17 +331,30 @@ import Layout from '../layouts/Layout.astro';
       target.setHours(hours, minutes, 0, 0);
 
       // 今日のおでかけ時刻が過ぎていたら翌日に設定
-      if (target <= now) {
+      if (target.getTime() <= now.getTime()) {
         target.setDate(target.getDate() + 1);
       }
 
       const diff = target.getTime() - now.getTime();
+      const totalSeconds = Math.floor(diff / 1000);
       
-      // おでかけ時刻を過ぎた場合（diff <= 0）
-      if (diff <= 0) {
-        checkAndNotify(0);
-        countdownCard.style.display = 'none';
-        // 翌日のカウントダウンを開始するため、次の更新で再計算される
+      // 00:00:00になった瞬間（totalSeconds <= 0）
+      if (totalSeconds <= 0) {
+        countdownTime.textContent = '00:00:00';
+        countdownCard.style.display = 'block';
+        
+        // 通知を1回だけ送る
+        const alreadyNotified = sessionStorage.getItem('departure_notified');
+        if (!alreadyNotified) {
+          checkAndNotify(0);
+          sessionStorage.setItem('departure_notified', 'true');
+          
+          // 5秒後にカウントダウンを非表示にして翌日の準備
+          setTimeout(() => {
+            countdownCard.style.display = 'none';
+            sessionStorage.removeItem('departure_notified');
+          }, 5000);
+        }
         return;
       }
 
@@ -353,15 +366,6 @@ import Layout from '../layouts/Layout.astro';
       countdownCard.style.display = 'block';
 
       // 通知チェック（正確なタイミング）
-      const totalSeconds = Math.floor(diff / 1000);
-      
-      // 00:00:00になった瞬間（totalSeconds === 0）
-      if (totalSeconds === 0) {
-        checkAndNotify(0);
-        return;
-      }
-      
-      // 各通知間隔に対して、ちょうどその時刻になったら通知
       pattern.notificationIntervals.forEach(interval => {
         const targetSeconds = interval * 60;
         // targetSecondsちょうど、またはtargetSeconds-1秒の時に通知
@@ -382,14 +386,19 @@ import Layout from '../layouts/Layout.astro';
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
       if (minutesLeft === 0) {
-        // おでかけ時刻
+        // おでかけ時刻: 音楽を再生
+        playAlarmMusic();
+
+        // 音声通知
+        if (settings.soundEnabled && 'speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance('おでかけの時間です！いってらっしゃい！');
+          utterance.lang = 'ja-JP';
+          utterance.volume = 1.0;
+          speechSynthesis.speak(utterance);
+        }
+
+        // ビジュアル通知
         if (isIOS) {
-          if (settings.soundEnabled && 'speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance('おでかけの時間です！いってらっしゃい！');
-            utterance.lang = 'ja-JP';
-            utterance.volume = 1.0;
-            speechSynthesis.speak(utterance);
-          }
           showVisualAlert('🚶 おでかけの時間です！', 'いってらっしゃい！');
         } else {
           if ('Notification' in window && Notification.permission === 'granted') {
@@ -400,11 +409,6 @@ import Layout from '../layouts/Layout.astro';
               requireInteraction: true,
               vibrate: [200, 100, 200]
             });
-          }
-          if (settings.soundEnabled && 'speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance('おでかけの時間です');
-            utterance.lang = 'ja-JP';
-            speechSynthesis.speak(utterance);
           }
         }
       } else {
@@ -427,6 +431,60 @@ import Layout from '../layouts/Layout.astro';
           }
         }
       }
+    }
+
+    // アラーム音楽の再生
+    function playAlarmMusic() {
+      // 音楽ファイルの存在を確認して再生
+      const audio = new Audio('/sounds/alarm.mp3');
+      
+      audio.addEventListener('canplaythrough', () => {
+        // 音楽が読み込まれたら再生
+        audio.play().catch(error => {
+          console.log('音楽の自動再生が制限されています:', error);
+          // 自動再生がブロックされた場合は、ユーザーインタラクションが必要
+        });
+      });
+
+      audio.addEventListener('error', (e) => {
+        console.log('音楽ファイルが見つかりません。デフォルトの通知音を使用します。');
+        // 音楽ファイルがない場合はビープ音を鳴らす
+        playBeepSound();
+      });
+
+      // 音量設定
+      audio.volume = 0.7;
+      
+      // ループ再生（ユーザーが止めるまで）
+      audio.loop = true;
+
+      // 30秒後に自動停止
+      setTimeout(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      }, 30000);
+
+      // グローバルに保存（後で停止できるように）
+      (window as any).currentAlarmAudio = audio;
+    }
+
+    // ビープ音を鳴らす（音楽ファイルがない場合のフォールバック）
+    function playBeepSound() {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = 800; // 800Hz
+      oscillator.type = 'sine';
+
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
     }
 
     // ビジュアルアラート表示（iOS用）
