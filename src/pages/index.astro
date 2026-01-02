@@ -36,6 +36,14 @@ import Layout from '../layouts/Layout.astro';
         <div class="loading">読み込み中...</div>
       </div>
     </div>
+
+    <!-- テストボタン（デバッグ用） -->
+    <div class="card">
+      <h2 class="section-title">通知テスト</h2>
+      <button class="btn btn-secondary btn-full" id="test-notification">通知をテスト</button>
+      <button class="btn btn-secondary btn-full" id="test-speech">音声をテスト</button>
+      <div id="test-result" style="margin-top: 1rem; padding: 0.75rem; background: #f0f0f0; border-radius: 6px; display: none;"></div>
+    </div>
   </div>
 
   <style>
@@ -178,6 +186,11 @@ import Layout from '../layouts/Layout.astro';
     .weather-desc {
       color: var(--color-text-secondary);
       margin-top: 0.25rem;
+    }
+
+    .btn-full {
+      width: 100%;
+      margin-bottom: 0.5rem;
     }
 
     @media (max-width: 640px) {
@@ -393,6 +406,98 @@ import Layout from '../layouts/Layout.astro';
         window.location.href = '/alarms';
       });
     }
+
+    // テストボタンのイベントリスナー
+    const testResult = document.getElementById('test-result');
+
+    document.getElementById('test-notification')?.addEventListener('click', async () => {
+      if (!testResult) return;
+      testResult.style.display = 'block';
+
+      // 通知許可のチェック
+      if (!('Notification' in window)) {
+        testResult.textContent = '❌ このブラウザは通知をサポートしていません';
+        testResult.style.background = '#fee';
+        return;
+      }
+
+      if (Notification.permission === 'denied') {
+        testResult.textContent = '❌ 通知が拒否されています。ブラウザの設定から許可してください';
+        testResult.style.background = '#fee';
+        return;
+      }
+
+      if (Notification.permission === 'default') {
+        testResult.textContent = '📋 通知許可をリクエスト中...';
+        testResult.style.background = '#fffbeb';
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          testResult.textContent = '❌ 通知が許可されませんでした';
+          testResult.style.background = '#fee';
+          return;
+        }
+      }
+
+      // 通知を送信
+      try {
+        const notification = new Notification('テスト通知', {
+          body: 'おでかけカウントダウンアプリからのテスト通知です',
+          icon: '/favicon.svg',
+          tag: 'test-notification',
+          requireInteraction: false,
+          vibrate: [200, 100, 200]
+        });
+
+        testResult.textContent = '✅ 通知を送信しました！通知が表示されましたか？';
+        testResult.style.background = '#d1fae5';
+
+        notification.onclick = () => {
+          testResult.textContent = '✅ 通知がクリックされました！';
+        };
+      } catch (error) {
+        testResult.textContent = `❌ エラー: ${error}`;
+        testResult.style.background = '#fee';
+      }
+    });
+
+    document.getElementById('test-speech')?.addEventListener('click', () => {
+      if (!testResult) return;
+      testResult.style.display = 'block';
+
+      if (!('speechSynthesis' in window)) {
+        testResult.textContent = '❌ このブラウザは音声合成をサポートしていません';
+        testResult.style.background = '#fee';
+        return;
+      }
+
+      try {
+        const utterance = new SpeechSynthesisUtterance('おでかけ5分前です');
+        utterance.lang = 'ja-JP';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        utterance.onstart = () => {
+          testResult.textContent = '🔊 音声を再生中...';
+          testResult.style.background = '#dbeafe';
+        };
+
+        utterance.onend = () => {
+          testResult.textContent = '✅ 音声再生が完了しました！聞こえましたか？';
+          testResult.style.background = '#d1fae5';
+        };
+
+        utterance.onerror = (event) => {
+          testResult.textContent = `❌ 音声エラー: ${event.error}`;
+          testResult.style.background = '#fee';
+        };
+
+        speechSynthesis.speak(utterance);
+      } catch (error) {
+        testResult.textContent = `❌ エラー: ${error}`;
+        testResult.style.background = '#fee';
+      }
+    });
 
     // 初期化
     updateDateTime();
