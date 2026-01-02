@@ -309,20 +309,34 @@ import Layout from '../layouts/Layout.astro';
 
       sessionStorage.setItem(`notified_${minutesLeft}`, 'true');
 
-      // 音声通知
       const settings = JSON.parse(localStorage.getItem('settings') || '{"soundEnabled":true}');
-      if (settings.soundEnabled && 'speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(`おでかけ${minutesLeft}分前です`);
-        utterance.lang = 'ja-JP';
-        speechSynthesis.speak(utterance);
-      }
 
-      // ブラウザ通知
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('おでかけカウントダウン', {
-          body: `おでかけ${minutesLeft}分前です`,
-          icon: '/favicon.svg'
-        });
+      if (minutesLeft === 0) {
+        // おでかけ時刻: ブラウザ通知（スマホのデフォルト音が鳴る）
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('おでかけの時間です！', {
+            body: 'いってらっしゃい！',
+            icon: '/favicon.svg',
+            tag: 'departure-alarm',
+            requireInteraction: true, // ユーザーが閉じるまで表示
+            vibrate: [200, 100, 200] // バイブレーション
+          });
+        }
+      } else {
+        // カウントダウン通知: 音声 + ブラウザ通知
+        if (settings.soundEnabled && 'speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance(`おでかけ${minutesLeft}分前です`);
+          utterance.lang = 'ja-JP';
+          speechSynthesis.speak(utterance);
+        }
+
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('おでかけカウントダウン', {
+            body: `おでかけ${minutesLeft}分前です`,
+            icon: '/favicon.svg',
+            tag: `countdown-${minutesLeft}`
+          });
+        }
       }
     }
 
