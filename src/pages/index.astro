@@ -668,7 +668,13 @@ import Layout from '../layouts/Layout.astro';
     // アラーム設定エリアのクリックイベント
     const alarmStatus = document.getElementById('alarm-status');
     if (alarmStatus) {
-      alarmStatus.addEventListener('click', () => {
+      alarmStatus.style.cursor = 'pointer';
+      alarmStatus.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.href = '/alarms';
+      });
+      alarmStatus.addEventListener('touchend', (e) => {
+        e.preventDefault();
         window.location.href = '/alarms';
       });
     }
