@@ -14,12 +14,14 @@ import Layout from '../layouts/Layout.astro';
     </div>
 
     <!-- 2段目: アラーム状況 -->
-    <div class="card alarm-status" id="alarm-status">
-      <h2 class="section-title">アラーム</h2>
-      <div id="alarm-info" class="alarm-info">
-        <p class="no-alarm">未設定</p>
+  <a href="/alarms" class="card alarm-status-link">
+      <div class="alarm-status" id="alarm-status">
+        <h2 class="section-title">アラーム</h2>
+        <div id="alarm-info" class="alarm-info">
+          <p class="no-alarm">未設定</p>
+        </div>
       </div>
-    </div>
+    </a>
 
     <!-- 3段目: カウントダウン表示 -->
     <div class="card countdown-card" id="countdown-card" style="display: none;">
