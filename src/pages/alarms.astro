@@ -2,703 +2,684 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="おでかけカウントダウンアプリ" activeTab="home">
-  <div class="home-container">
-    <!-- 1段目: 日付・時刻表示 -->
-    <div class="card datetime-card">
-      <div class="date" id="current-date">2026年1月2日 (Thu)</div>
-      <div class="time-display">
-        <span class="time-hm" id="current-time-hm">00:00</span>
-        <span class="time-s" id="current-time-s">:00</span>
+<Layout title="アラーム設定 - おでかけカウントダウン" activeTab="alarms">
+  <div class="alarms-container">
+    <h1 class="page-title">アラーム設定</h1>
+
+    <!-- お気に入りリスト -->
+    <div class="card">
+      <h2 class="section-title">お気に入り</h2>
+      <div id="favorites-list" class="favorites-list">
+        <p class="empty-message">登録されたパターンがありません</p>
       </div>
     </div>
 
-    <!-- 2段目: アラーム状況 -->
-    <div class="card alarm-status" id="alarm-status">
-      <h2 class="section-title">アラーム</h2>
-      <div id="alarm-info" class="alarm-info">
-        <p class="no-alarm">未設定</p>
-      </div>
-    </div>
+    <!-- 新規作成ボタン -->
+    <button class="btn btn-primary btn-full" id="new-alarm-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      新規作成
+    </button>
 
-    <!-- 3段目: カウントダウン表示 -->
-    <div class="card countdown-card" id="countdown-card" style="display: none;">
-      <h2 class="section-title">おでかけまで</h2>
-      <div class="countdown-display">
-        <div class="countdown-time" id="countdown-time">00:00:00</div>
-      </div>
-    </div>
+    <!-- アラームフォームモーダル -->
+    <div id="alarm-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title">新規アラーム</h2>
+          <button class="close-btn" id="close-modal">×</button>
+        </div>
 
-    <!-- 4段目: 天気情報 -->
-    <div class="card weather-card">
-      <h2 class="section-title">天気情報</h2>
-      <div id="weather-info" class="weather-info">
-        <div class="loading">読み込み中...</div>
-      </div>
-      <div class="location-selector">
-        <select id="location-select" class="location-select">
-          <option value="gps">現在地 (GPS)</option>
-          <option value="35.6762,139.6503">東京</option>
-          <option value="34.6937,135.5023">大阪</option>
-          <option value="35.0116,135.7681">京都</option>
-          <option value="35.4437,139.6380">横浜</option>
-          <option value="43.0642,141.3469">札幌</option>
-          <option value="33.5904,130.4017">福岡</option>
-          <option value="26.2124,127.6809">那覇</option>
-        </select>
+        <form id="alarm-form" class="alarm-form">
+          <input type="hidden" id="edit-id" />
+
+          <div class="form-group">
+            <label for="label">ラベル</label>
+            <input type="text" id="label" placeholder="例: 出勤パターン" required />
+          </div>
+
+          <div class="form-group">
+            <label for="wake-time">めざまし時刻</label>
+            <div class="time-input-wrapper">
+              <input type="time" id="wake-time" />
+              <label class="checkbox-item">
+                <input type="checkbox" id="wake-time-off" />
+                <span>OFF</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="departure-time">おでかけ時刻</label>
+            <input type="time" id="departure-time" required />
+          </div>
+
+          <div class="form-group">
+            <label>カウントダウン通知間隔</label>
+            <div class="checkbox-grid" id="intervals-grid"></div>
+          </div>
+
+          <div class="form-group">
+            <label>繰り返し</label>
+            <div class="weekday-buttons" id="weekday-buttons"></div>
+          </div>
+
+          <div class="error-message" id="error-message" style="display: none;"></div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" id="cancel-btn">キャンセル</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 
   <style>
-    .home-container {
+    .alarms-container {
       max-width: 600px;
       margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
     }
 
-    .card {
-      padding: 1rem;
-    }
-
-    /* 1段目: 日付・時刻 */
-    .datetime-card {
-      text-align: center;
-      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-      color: white;
-    }
-
-    .date {
-      font-size: 1rem;
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-    }
-
-    .time-display {
-      display: flex;
-      justify-content: center;
-      align-items: baseline;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .time-hm {
-      font-size: 3rem;
+    .page-title {
+      font-size: 1.75rem;
       font-weight: 700;
-      line-height: 1;
-    }
-
-    .time-s {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-left: 0.1rem;
-    }
-
-    /* 2段目: アラーム */
-    .alarm-status {
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .alarm-status:hover {
-      background: #f8fafc;
+      margin-bottom: 1.5rem;
+      color: var(--color-text);
     }
 
     .section-title {
-      font-size: 1rem;
+      font-size: 1.125rem;
       font-weight: 600;
-      margin-bottom: 0.75rem;
-      text-align: center;
+      margin-bottom: 1rem;
     }
 
-    .alarm-info {
-      text-align: center;
-    }
-
-    .no-alarm {
-      color: var(--color-text-secondary);
-      font-size: 0.875rem;
-      margin: 0;
-    }
-
-    .alarm-details {
+    .favorites-list {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+    }
+
+    .empty-message {
+      text-align: center;
+      color: var(--color-text-secondary);
+      padding: 2rem 0;
+    }
+
+    .favorite-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: var(--color-background);
+      border-radius: 8px;
+      transition: background 0.2s;
       font-size: 0.875rem;
     }
 
-    .alarm-item {
+    .favorite-item:hover {
+      background: #e2e8f0;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #cbd5e1;
+      border-radius: 24px;
+      transition: 0.3s;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--color-primary);
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+
+    .favorite-label-wrapper {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .favorite-label {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .favorite-repeat {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .favorite-time {
+      color: var(--color-text-secondary);
+      font-size: 0.8rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.4rem;
+      color: var(--color-text-secondary);
+      transition: color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .icon-btn:hover {
+      color: var(--color-text);
+    }
+
+    .icon-btn.delete:hover {
+      color: var(--color-error);
+    }
+
+    .btn-full {
+      width: 100%;
+      margin-top: 1rem;
+    }
+
+    /* モーダル */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background: var(--color-surface);
+      border-radius: 12px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.4rem 0.75rem;
-      background: var(--color-background);
-      border-radius: 6px;
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--color-border);
     }
 
-    .alarm-label {
+    .modal-header h2 {
+      font-size: 1.25rem;
       font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
       color: var(--color-text-secondary);
-      font-size: 0.8rem;
+      line-height: 1;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .alarm-time {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--color-primary);
+    .alarm-form {
+      padding: 1.5rem;
     }
 
-    /* 3段目: カウントダウン */
-    .countdown-card {
-      background: linear-gradient(135deg, var(--color-secondary) 0%, #059669 100%);
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .time-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .time-input-wrapper input[type="time"] {
+      flex: 1;
+    }
+
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      width: auto;
+      cursor: pointer;
+    }
+
+    .weekday-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .weekday-btn {
+      padding: 0.5rem 0.75rem;
+      border: 2px solid var(--color-border);
+      background: var(--color-surface);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+      font-size: 0.875rem;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .weekday-btn.active {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
       color: white;
     }
 
-    .countdown-display {
-      text-align: center;
-    }
-
-    .countdown-time {
-      font-size: 3rem;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      line-height: 1;
-    }
-
-    /* 4段目: 天気 */
-    .weather-info {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      min-height: 60px;
-    }
-
-    .loading {
-      color: var(--color-text-secondary);
-      text-align: center;
-      width: 100%;
-    }
-
-    .weather-display {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      width: 100%;
-      justify-content: center;
-    }
-
-    .weather-icon {
-      font-size: 2.5rem;
-    }
-
-    .weather-details {
-      text-align: left;
-    }
-
-    .weather-condition {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-    }
-
-    .weather-temp {
-      font-size: 0.875rem;
-      color: var(--color-text-secondary);
-    }
-
-    .location-selector {
-      margin-top: 0.75rem;
-    }
-
-    .location-select {
-      width: 100%;
-      padding: 0.5rem;
-      border: 1px solid var(--color-border);
+    .error-message {
+      background: #fee;
+      color: var(--color-error);
+      padding: 0.75rem;
       border-radius: 6px;
+      margin-bottom: 1rem;
       font-size: 0.875rem;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .form-actions .btn {
+      flex: 1;
     }
 
     @media (max-width: 640px) {
-      .home-container {
-        gap: 0.5rem;
+      .checkbox-grid {
+        grid-template-columns: repeat(2, 1fr);
       }
 
-      .card {
-        padding: 0.75rem;
-      }
-
-      .time-hm {
-        font-size: 2.5rem;
-      }
-
-      .time-s {
-        font-size: 1.25rem;
-      }
-
-      .countdown-time {
-        font-size: 2.5rem;
-      }
-
-      .section-title {
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
+      .favorite-item {
+        font-size: 0.8rem;
       }
     }
   </style>
 
   <script>
-    import type { AlarmPattern, WeatherData } from '../types';
+    import type { AlarmPattern } from '../types';
+    import { NOTIFICATION_INTERVALS, WEEKDAYS } from '../types';
 
-    const WEEKDAY_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    let editingId: string | null = null;
 
-    // 現在時刻の更新
-    function updateDateTime() {
-      const now = new Date();
-      const dateEl = document.getElementById('current-date');
-      const timeHmEl = document.getElementById('current-time-hm');
-      const timeSEl = document.getElementById('current-time-s');
-      
-      if (dateEl) {
-        const year = now.getFullYear();
-        const month = now.getMonth() + 1;
-        const day = now.getDate();
-        const weekday = WEEKDAY_EN[now.getDay()];
-        dateEl.textContent = `${year}年${month}月${day}日 (${weekday})`;
-      }
-      
-      if (timeHmEl && timeSEl) {
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        timeHmEl.textContent = `${hours}:${minutes}`;
-        timeSEl.textContent = `:${seconds}`;
-      }
-    }
-
-    // アラーム情報の表示
-    function displayAlarmInfo() {
-      const alarmInfoEl = document.getElementById('alarm-info');
-      if (!alarmInfoEl) return;
+    // お気に入りリストの表示
+    function displayFavorites() {
+      const listEl = document.getElementById('favorites-list');
+      if (!listEl) return;
 
       const stored = localStorage.getItem('alarmPatterns');
-      if (!stored) {
-        alarmInfoEl.innerHTML = '<p class="no-alarm">未設定</p>';
+      const patterns: AlarmPattern[] = stored ? JSON.parse(stored) : [];
+
+      if (patterns.length === 0) {
+        listEl.innerHTML = '<p class="empty-message">登録されたパターンがありません</p>';
         return;
       }
 
-      const patterns: AlarmPattern[] = JSON.parse(stored);
-      const activePattern = patterns.find(p => p.isActive);
-
-      if (!activePattern) {
-        alarmInfoEl.innerHTML = '<p class="no-alarm">未設定</p>';
-        return;
-      }
-
-      const wakeTimeDisplay = activePattern.wakeUpTime || 'OFF';
-      
-      alarmInfoEl.innerHTML = `
-        <div class="alarm-details">
-          <div class="alarm-item">
-            <span class="alarm-label">パターン</span>
-            <span>${activePattern.label}</span>
-          </div>
-          <div class="alarm-item">
-            <span class="alarm-label">めざまし</span>
-            <span class="alarm-time">${wakeTimeDisplay}</span>
-          </div>
-          <div class="alarm-item">
-            <span class="alarm-label">おでかけ</span>
-            <span class="alarm-time">${activePattern.departureTime}</span>
-          </div>
-        </div>
-      `;
-
-      updateCountdown(activePattern);
-    }
-
-    // カウントダウンの更新
-    function updateCountdown(pattern: AlarmPattern) {
-      const countdownCard = document.getElementById('countdown-card');
-      const countdownTime = document.getElementById('countdown-time');
-      if (!countdownCard || !countdownTime) return;
-
-      const now = new Date();
-      const [hours, minutes] = pattern.departureTime.split(':').map(Number);
-      const target = new Date(now);
-      target.setHours(hours, minutes, 0, 0);
-
-      // 今日のおでかけ時刻が過ぎていたら翌日に設定
-      if (target.getTime() <= now.getTime()) {
-        target.setDate(target.getDate() + 1);
-      }
-
-      const diff = target.getTime() - now.getTime();
-      const totalSeconds = Math.floor(diff / 1000);
-      
-      // 00:00:00になった瞬間（totalSeconds <= 0）
-      if (totalSeconds <= 0) {
-        countdownTime.textContent = '00:00:00';
-        countdownCard.style.display = 'block';
+      listEl.innerHTML = patterns.map(pattern => {
+        const wakeDisplay = pattern.wakeUpTime || 'OFF';
+        const repeatDisplay = pattern.repeatDays && pattern.repeatDays.length > 0 
+          ? `<div class="favorite-repeat">🔁 ${pattern.repeatDays.map(d => WEEKDAYS[d]).join(',')}</div>`
+          : '';
         
-        // 通知を1回だけ送る
-        const alreadyNotified = sessionStorage.getItem('departure_notified');
-        if (!alreadyNotified) {
-          checkAndNotify(0);
-          sessionStorage.setItem('departure_notified', 'true');
-          
-          // 5秒後にカウントダウンを非表示にして翌日の準備
-          setTimeout(() => {
-            countdownCard.style.display = 'none';
-            sessionStorage.removeItem('departure_notified');
-          }, 5000);
-        }
-        return;
-      }
+        return `
+        <div class="favorite-item">
+          <label class="toggle-switch">
+            <input type="checkbox" ${pattern.isActive ? 'checked' : ''} data-id="${pattern.id}" class="toggle-active">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="favorite-label-wrapper">
+            <div class="favorite-label">${pattern.label}</div>
+            ${repeatDisplay}
+          </div>
+          <span class="favorite-time">🌅${wakeDisplay}</span>
+          <span class="favorite-time">🚶${pattern.departureTime}</span>
+          <button class="icon-btn edit" data-id="${pattern.id}" title="編集">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+          <button class="icon-btn delete" data-id="${pattern.id}" title="削除">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      `}).join('');
 
-      const hours_left = Math.floor(diff / (1000 * 60 * 60));
-      const minutes_left = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds_left = Math.floor((diff % (1000 * 60)) / 1000);
+      // イベントリスナーを追加
+      document.querySelectorAll('.toggle-active').forEach(toggle => {
+        toggle.addEventListener('change', handleToggle);
+      });
 
-      countdownTime.textContent = `${String(hours_left).padStart(2, '0')}:${String(minutes_left).padStart(2, '0')}:${String(seconds_left).padStart(2, '0')}`;
-      countdownCard.style.display = 'block';
+      document.querySelectorAll('.edit').forEach(btn => {
+        btn.addEventListener('click', handleEdit);
+      });
 
-      // 通知チェック（正確なタイミング）
-      pattern.notificationIntervals.forEach(interval => {
-        const targetSeconds = interval * 60;
-        // targetSecondsちょうど、またはtargetSeconds-1秒の時に通知
-        if (totalSeconds === targetSeconds || totalSeconds === targetSeconds - 1) {
-          checkAndNotify(interval);
-        }
+      document.querySelectorAll('.delete').forEach(btn => {
+        btn.addEventListener('click', handleDelete);
       });
     }
 
-    // 通知処理
-    function checkAndNotify(minutesLeft: number) {
-      const lastNotified = sessionStorage.getItem(`notified_${minutesLeft}`);
-      if (lastNotified) return;
+    // アクティブ切り替え
+    function handleToggle(e: Event) {
+      const target = e.target as HTMLInputElement;
+      const id = target.dataset.id;
+      if (!id) return;
 
-      sessionStorage.setItem(`notified_${minutesLeft}`, 'true');
+      const stored = localStorage.getItem('alarmPatterns');
+      const patterns: AlarmPattern[] = stored ? JSON.parse(stored) : [];
 
-      const settings = JSON.parse(localStorage.getItem('settings') || '{"soundEnabled":true}');
+      const updatedPatterns = patterns.map(p => ({
+        ...p,
+        isActive: p.id === id ? target.checked : false
+      }));
 
-      if (minutesLeft === 0) {
-        // おでかけ時刻: 音楽を再生
-        playAlarmMusic();
+      localStorage.setItem('alarmPatterns', JSON.stringify(updatedPatterns));
+      displayFavorites();
 
-        // 音声通知（iOSでも動作するように）
-        if (settings.soundEnabled && 'speechSynthesis' in window) {
-          // 既存の音声を停止
-          speechSynthesis.cancel();
-          
-          const utterance = new SpeechSynthesisUtterance('おでかけの時間です！いってらっしゃい！');
-          utterance.lang = 'ja-JP';
-          utterance.volume = 1.0;
-          utterance.rate = 1.0;
-          utterance.pitch = 1.0;
-          
-          // 少し遅延させて確実に再生
-          setTimeout(() => {
-            speechSynthesis.speak(utterance);
-          }, 100);
-        }
+      sessionStorage.clear();
+    }
 
-        // ビジュアルアラート
-        showVisualAlert('🚶 おでかけの時間です！', 'いってらっしゃい！');
+    // 編集
+    function handleEdit(e: Event) {
+      const btn = e.currentTarget as HTMLButtonElement;
+      const id = btn.dataset.id;
+      if (!id) return;
+
+      const stored = localStorage.getItem('alarmPatterns');
+      const patterns: AlarmPattern[] = stored ? JSON.parse(stored) : [];
+      const pattern = patterns.find(p => p.id === id);
+
+      if (!pattern) return;
+
+      editingId = id;
+      (document.getElementById('modal-title') as HTMLHeadingElement).textContent = 'アラーム編集';
+      (document.getElementById('edit-id') as HTMLInputElement).value = id;
+      (document.getElementById('label') as HTMLInputElement).value = pattern.label;
+      
+      const wakeTimeInput = document.getElementById('wake-time') as HTMLInputElement;
+      const wakeTimeOff = document.getElementById('wake-time-off') as HTMLInputElement;
+      
+      if (pattern.wakeUpTime) {
+        wakeTimeInput.value = pattern.wakeUpTime;
+        wakeTimeInput.disabled = false;
+        wakeTimeOff.checked = false;
       } else {
-        // カウントダウン通知
-        if (settings.soundEnabled && 'speechSynthesis' in window) {
-          // 既存の音声を停止
-          speechSynthesis.cancel();
-          
-          const utterance = new SpeechSynthesisUtterance(`おでかけ${minutesLeft}分前です`);
-          utterance.lang = 'ja-JP';
-          utterance.volume = 1.0;
-          utterance.rate = 1.0;
-          utterance.pitch = 1.0;
-          
-          // 少し遅延させて確実に再生
-          setTimeout(() => {
-            speechSynthesis.speak(utterance);
-          }, 100);
+        wakeTimeInput.value = '';
+        wakeTimeInput.disabled = true;
+        wakeTimeOff.checked = true;
+      }
+      
+      (document.getElementById('departure-time') as HTMLInputElement).value = pattern.departureTime;
+
+      // 通知間隔の復元
+      NOTIFICATION_INTERVALS.forEach(interval => {
+        const checkbox = document.querySelector(`input[value="${interval}"]`) as HTMLInputElement;
+        if (checkbox) {
+          checkbox.checked = pattern.notificationIntervals.includes(interval);
         }
-
-        // ビジュアルアラート（3秒で自動消去）
-        showVisualAlert('⏰ カウントダウン', `おでかけ${minutesLeft}分前です`, 3000);
-      }
-    }
-
-    // アラーム音楽の再生
-    function playAlarmMusic() {
-      // 既存の音楽を停止
-      if ((window as any).currentAlarmAudio) {
-        (window as any).currentAlarmAudio.pause();
-        (window as any).currentAlarmAudio.currentTime = 0;
-      }
-
-      const audio = new Audio('/sounds/alarm.mp3');
-      
-      // iOSでの再生を試みる
-      audio.load();
-      
-      const tryPlay = () => {
-        audio.play()
-          .then(() => {
-            console.log('音楽再生開始');
-          })
-          .catch(error => {
-            console.log('音楽の自動再生が制限されています:', error);
-            // フォールバック: ビープ音
-            playBeepSound();
-          });
-      };
-
-      audio.addEventListener('canplaythrough', tryPlay, { once: true });
-      
-      audio.addEventListener('error', (e) => {
-        console.log('音楽ファイルが見つかりません');
-        playBeepSound();
       });
 
-      // 音量設定
-      audio.volume = 0.7;
-      
-      // ループ再生
-      audio.loop = true;
-
-      // 30秒後に自動停止
-      setTimeout(() => {
-        audio.pause();
-        audio.currentTime = 0;
-      }, 30000);
-
-      // グローバルに保存
-      (window as any).currentAlarmAudio = audio;
-    }
-
-    // ビープ音を鳴らす（音楽ファイルがない場合のフォールバック）
-    function playBeepSound() {
-      try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        
-        // 3回ビープ音を鳴らす
-        for (let i = 0; i < 3; i++) {
-          const oscillator = audioContext.createOscillator();
-          const gainNode = audioContext.createGain();
-
-          oscillator.connect(gainNode);
-          gainNode.connect(audioContext.destination);
-
-          oscillator.frequency.value = 800;
-          oscillator.type = 'sine';
-
-          const startTime = audioContext.currentTime + (i * 0.5);
-          gainNode.gain.setValueAtTime(0.3, startTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
-
-          oscillator.start(startTime);
-          oscillator.stop(startTime + 0.3);
-        }
-      } catch (error) {
-        console.log('ビープ音の再生に失敗:', error);
-      }
-    }
-
-    // ビジュアルアラート表示（iOS用）
-    function showVisualAlert(title: string, message: string, duration: number = 0) {
-      const existing = document.getElementById('visual-alert');
-      if (existing) existing.remove();
-
-      const alert = document.createElement('div');
-      alert.id = 'visual-alert';
-      alert.innerHTML = `
-        <div style="
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: white;
-          padding: 2rem;
-          border-radius: 16px;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-          z-index: 10000;
-          text-align: center;
-          min-width: 280px;
-          max-width: 90vw;
-          animation: slideIn 0.3s ease-out;
-        ">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">${title.split(' ')[0]}</div>
-          <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">${title.split(' ').slice(1).join(' ')}</div>
-          <div style="font-size: 1rem; color: #666;">${message}</div>
-          <button onclick="this.closest('#visual-alert').remove()" style="
-            margin-top: 1.5rem;
-            padding: 0.75rem 2rem;
-            background: var(--color-primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-          ">確認</button>
-        </div>
-        <div onclick="this.closest('#visual-alert').remove()" style="
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0,0,0,0.5);
-          z-index: 9999;
-        "></div>
-        <style>
-          @keyframes slideIn {
-            from {
-              opacity: 0;
-              transform: translate(-50%, -60%);
-            }
-            to {
-              opacity: 1;
-              transform: translate(-50%, -50%);
-            }
-          }
-        </style>
-      `;
-      document.body.appendChild(alert);
-
-      if (duration > 0) {
-        setTimeout(() => {
-          alert.remove();
-        }, duration);
-      }
-    }
-
-    // 天気情報の取得（Open-Meteo）
-    async function fetchWeather() {
-      const weatherInfoEl = document.getElementById('weather-info');
-      const locationSelect = document.getElementById('location-select') as HTMLSelectElement;
-      if (!weatherInfoEl) return;
-
-      try {
-        let lat: number, lon: number;
-
-        if (locationSelect.value === 'gps') {
-          if (!('geolocation' in navigator)) {
-            throw new Error('位置情報が利用できません');
-          }
-
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject);
-          });
-
-          lat = position.coords.latitude;
-          lon = position.coords.longitude;
+      // 繰り返し曜日の復元
+      document.querySelectorAll('.weekday-btn').forEach((btn) => {
+        const dayStr = btn.getAttribute('data-day');
+        const dayNum = dayStr ? parseInt(dayStr) : -1;
+        if (pattern.repeatDays && pattern.repeatDays.includes(dayNum)) {
+          btn.classList.add('active');
         } else {
-          [lat, lon] = locationSelect.value.split(',').map(Number);
+          btn.classList.remove('active');
         }
+      });
 
-        // Open-Meteo API
-        const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia/Tokyo`
-        );
+      showModal();
+    }
 
-        if (!response.ok) throw new Error('天気情報の取得に失敗しました');
+    // 削除
+    function handleDelete(e: Event) {
+      const btn = e.currentTarget as HTMLButtonElement;
+      const id = btn.dataset.id;
+      if (!id) return;
 
-        const data = await response.json();
-        
-        // 天気コードをアイコンに変換
-        const weatherCode = data.current.weather_code;
-        const weatherIcon = getWeatherIcon(weatherCode);
-        const weatherDesc = getWeatherDescription(weatherCode);
-        
-        const currentTemp = Math.round(data.current.temperature_2m);
-        const maxTemp = Math.round(data.daily.temperature_2m_max[0]);
-        const minTemp = Math.round(data.daily.temperature_2m_min[0]);
+      if (!confirm('このアラームを削除しますか?')) return;
 
-        weatherInfoEl.innerHTML = `
-          <div class="weather-display">
-            <div class="weather-icon">${weatherIcon}</div>
-            <div class="weather-details">
-              <div class="weather-condition">${weatherDesc}</div>
-              <div class="weather-temp">現在: ${currentTemp}℃</div>
-              <div class="weather-temp">最高: ${maxTemp}℃ / 最低: ${minTemp}℃</div>
-            </div>
-          </div>
-        `;
-      } catch (error) {
-        weatherInfoEl.innerHTML = `
-          <div class="weather-display">
-            <div class="weather-details">
-              <div class="weather-condition">天気情報を取得できませんでした</div>
-            </div>
-          </div>
-        `;
+      const stored = localStorage.getItem('alarmPatterns');
+      const patterns: AlarmPattern[] = stored ? JSON.parse(stored) : [];
+      const filtered = patterns.filter(p => p.id !== id);
+
+      localStorage.setItem('alarmPatterns', JSON.stringify(filtered));
+      displayFavorites();
+    }
+
+    // モーダル表示
+    function showModal() {
+      const modal = document.getElementById('alarm-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    // モーダル非表示
+    function hideModal() {
+      const modal = document.getElementById('alarm-modal');
+      if (modal) modal.style.display = 'none';
+      resetForm();
+    }
+
+    // フォームリセット
+    function resetForm() {
+      editingId = null;
+      (document.getElementById('alarm-form') as HTMLFormElement).reset();
+      (document.getElementById('modal-title') as HTMLHeadingElement).textContent = '新規アラーム';
+      (document.getElementById('edit-id') as HTMLInputElement).value = '';
+      (document.getElementById('wake-time') as HTMLInputElement).disabled = false;
+      document.querySelectorAll('.weekday-btn').forEach(btn => btn.classList.remove('active'));
+      const errorMsg = document.getElementById('error-message');
+      if (errorMsg) errorMsg.style.display = 'none';
+    }
+
+    // フォーム初期化
+    function initForm() {
+      // 通知間隔チェックボックス
+      const intervalsGrid = document.getElementById('intervals-grid');
+      if (intervalsGrid) {
+        intervalsGrid.innerHTML = NOTIFICATION_INTERVALS.map(interval => `
+          <label class="checkbox-item">
+            <input type="checkbox" value="${interval}" ${[30, 10, 5, 1].includes(interval) ? 'checked' : ''}>
+            <span>${interval}分前</span>
+          </label>
+        `).join('');
       }
-    }
 
-    // 天気コードからアイコンを取得
-    function getWeatherIcon(code: number): string {
-      if (code === 0) return '☀️';
-      if (code <= 3) return '⛅';
-      if (code <= 48) return '🌫️';
-      if (code <= 67) return '🌧️';
-      if (code <= 77) return '🌨️';
-      if (code <= 82) return '🌧️';
-      if (code <= 86) return '🌨️';
-      return '⛈️';
-    }
+      // 曜日ボタン
+      const weekdayButtons = document.getElementById('weekday-buttons');
+      if (weekdayButtons) {
+        weekdayButtons.innerHTML = WEEKDAYS.map((day, index) => `
+          <button type="button" class="weekday-btn" data-day="${index}">${day}</button>
+        `).join('');
 
-    // 天気コードから説明を取得
-    function getWeatherDescription(code: number): string {
-      if (code === 0) return '快晴';
-      if (code === 1) return '晴れ';
-      if (code === 2) return '一部曇り';
-      if (code === 3) return '曇り';
-      if (code <= 48) return '霧';
-      if (code <= 67) return '雨';
-      if (code <= 77) return '雪';
-      if (code <= 82) return '強い雨';
-      if (code <= 86) return '強い雪';
-      return '雷雨';
-    }
+        // 曜日ボタンのクリックイベント
+        const buttons = weekdayButtons.querySelectorAll('.weekday-btn');
+        buttons.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            btn.classList.toggle('active');
+          });
+        });
+      }
 
-    // アラーム設定エリアのクリックイベント
-    const alarmStatus = document.getElementById('alarm-status');
-    if (alarmStatus) {
-      alarmStatus.addEventListener('click', () => {
-        window.location.href = '/alarms';
+      // めざましOFFチェックボックス
+      const wakeTimeOff = document.getElementById('wake-time-off') as HTMLInputElement;
+      const wakeTimeInput = document.getElementById('wake-time') as HTMLInputElement;
+      
+      wakeTimeOff?.addEventListener('change', () => {
+        wakeTimeInput.disabled = wakeTimeOff.checked;
+        if (wakeTimeOff.checked) {
+          wakeTimeInput.value = '';
+        }
       });
     }
 
-    // 地域選択の変更イベント
-    const locationSelect = document.getElementById('location-select');
-    if (locationSelect) {
-      locationSelect.addEventListener('change', fetchWeather);
+    // フォーム送信
+    function handleSubmit(e: Event) {
+      e.preventDefault();
+
+      const label = (document.getElementById('label') as HTMLInputElement).value;
+      const wakeTimeOff = (document.getElementById('wake-time-off') as HTMLInputElement).checked;
+      const wakeTimeInput = document.getElementById('wake-time') as HTMLInputElement;
+      const wakeTime = wakeTimeOff ? '' : wakeTimeInput.value;
+      const departureTime = (document.getElementById('departure-time') as HTMLInputElement).value;
+
+      // バリデーション
+      if (wakeTime && wakeTime >= departureTime) {
+        const errorMsg = document.getElementById('error-message');
+        if (errorMsg) {
+          errorMsg.textContent = 'めざまし時刻はおでかけ時刻より前に設定してください';
+          errorMsg.style.display = 'block';
+        }
+        return;
+      }
+
+      // 通知間隔の取得
+      const intervals: number[] = [];
+      document.querySelectorAll('#intervals-grid input:checked').forEach(input => {
+        intervals.push(parseInt((input as HTMLInputElement).value));
+      });
+
+      // 繰り返し曜日の取得
+      const repeatDays: number[] = [];
+      document.querySelectorAll('.weekday-btn.active').forEach(btn => {
+        const dayStr = btn.getAttribute('data-day');
+        if (dayStr) {
+          repeatDays.push(parseInt(dayStr));
+        }
+      });
+
+      const stored = localStorage.getItem('alarmPatterns');
+      const patterns: AlarmPattern[] = stored ? JSON.parse(stored) : [];
+
+      if (editingId) {
+        // 編集
+        const index = patterns.findIndex(p => p.id === editingId);
+        if (index !== -1) {
+          patterns[index] = {
+            ...patterns[index],
+            label,
+            wakeUpTime: wakeTime,
+            departureTime: departureTime,
+            notificationIntervals: intervals,
+            repeatDays: repeatDays.sort((a, b) => a - b),
+            updatedAt: new Date().toISOString()
+          };
+        }
+      } else {
+        // 新規作成
+        const newPattern: AlarmPattern = {
+          id: Date.now().toString(),
+          label,
+          wakeUpTime: wakeTime,
+          departureTime: departureTime,
+          notificationIntervals: intervals,
+          repeatDays: repeatDays.sort((a, b) => a - b),
+          isActive: patterns.length === 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        patterns.push(newPattern);
+      }
+
+      localStorage.setItem('alarmPatterns', JSON.stringify(patterns));
+      hideModal();
+      displayFavorites();
     }
+
+    // イベントリスナー設定
+    document.getElementById('new-alarm-btn')?.addEventListener('click', () => {
+      resetForm();
+      showModal();
+    });
+
+    document.getElementById('close-modal')?.addEventListener('click', hideModal);
+    document.getElementById('cancel-btn')?.addEventListener('click', hideModal);
+    document.getElementById('alarm-form')?.addEventListener('submit', handleSubmit);
+
+    // モーダル外クリックで閉じる
+    document.getElementById('alarm-modal')?.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        hideModal();
+      }
+    });
 
     // 初期化
-    updateDateTime();
-    displayAlarmInfo();
-    fetchWeather();
-
-    // 通知許可をリクエスト
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-
-    // 定期更新
-    setInterval(() => {
-      updateDateTime();
-      const stored = localStorage.getItem('alarmPatterns');
-      if (stored) {
-        const patterns: AlarmPattern[] = JSON.parse(stored);
-        const activePattern = patterns.find(p => p.isActive);
-        if (activePattern) {
-          updateCountdown(activePattern);
-        }
-      }
-    }, 1000);
+    initForm();
+    displayFavorites();
   </script>
 </Layout>
