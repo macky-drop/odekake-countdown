@@ -96,9 +96,19 @@ import Layout from '../layouts/Layout.astro';
     }
 
     /* 2段目: アラーム */
+    .alarm-status-link {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.2s;
+    }
+
+    .alarm-status-link:active {
+      transform: scale(0.98);
+    }
+
     .alarm-status {
       cursor: pointer;
-      transition: background 0.2s;
     }
 
     .alarm-status:hover {
@@ -663,20 +673,6 @@ import Layout from '../layouts/Layout.astro';
       if (code <= 82) return '強い雨';
       if (code <= 86) return '強い雪';
       return '雷雨';
-    }
-
-    // アラーム設定エリアのクリックイベント
-    const alarmStatus = document.getElementById('alarm-status');
-    if (alarmStatus) {
-      alarmStatus.style.cursor = 'pointer';
-      alarmStatus.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.location.href = '/alarms';
-      });
-      alarmStatus.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        window.location.href = '/alarms';
-      });
     }
 
     // 地域選択の変更イベント
