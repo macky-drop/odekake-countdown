@@ -1,737 +1,1295 @@
 ---
-import Layout from '../layouts/Layout.astro';
+// src/pages/index.astro
 ---
 
-<Layout title="おでかけカウントダウンアプリ" activeTab="home">
-  <div class="home-container">
-    <!-- 1段目: 日付・時刻表示 -->
-    <div class="card datetime-card">
-      <div class="date" id="current-date">2026年1月2日 (Thu)</div>
-      <div class="time-display">
-        <span class="time-hm" id="current-time-hm">00:00</span>
-        <span class="time-s" id="current-time-s">:00</span>
-      </div>
-    </div>
-
-    <!-- 2段目: アラーム状況 -->
-  <a href="/alarms" class="card alarm-status-link">
-      <div class="alarm-status" id="alarm-status">
-        <h2 class="section-title">アラーム</h2>
-        <div id="alarm-info" class="alarm-info">
-          <p class="no-alarm">未設定</p>
-        </div>
-      </div>
-    </a>
-
-    <!-- 3段目: カウントダウン表示 -->
-    <div class="card countdown-card" id="countdown-card" style="display: none;">
-      <h2 class="section-title">おでかけまで</h2>
-      <div class="countdown-display">
-        <div class="countdown-time" id="countdown-time">00:00:00</div>
-      </div>
-    </div>
-
-    <!-- 4段目: 天気情報 -->
-    <div class="card weather-card">
-      <h2 class="section-title">天気情報</h2>
-      <div id="weather-info" class="weather-info">
-        <div class="loading">読み込み中...</div>
-      </div>
-      <div class="location-selector">
-        <select id="location-select" class="location-select">
-          <option value="gps">現在地 (GPS)</option>
-          <option value="35.6762,139.6503">東京</option>
-          <option value="34.6937,135.5023">大阪</option>
-          <option value="35.0116,135.7681">京都</option>
-          <option value="35.4437,139.6380">横浜</option>
-          <option value="43.0642,141.3469">札幌</option>
-          <option value="33.5904,130.4017">福岡</option>
-          <option value="26.2124,127.6809">那覇</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="お出かけカウントダウンアプリ">
+  <title>おでかけカウントダウン</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#4A90E2">
   <style>
-    .home-container {
-      max-width: 600px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .card {
-      padding: 1rem;
-    }
-
-    /* 1段目: 日付・時刻 */
-    .datetime-card {
-      text-align: center;
-      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-      color: white;
-    }
-
-    .date {
-      font-size: 1rem;
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-    }
-
-    .time-display {
-      display: flex;
-      justify-content: center;
-      align-items: baseline;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .time-hm {
-      font-size: 3rem;
-      font-weight: 700;
-      line-height: 1;
-    }
-
-    .time-s {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-left: 0.1rem;
-    }
-
-    /* 2段目: アラーム */
-    .alarm-status-link {
-      text-decoration: none;
-      color: inherit;
-      display: block;
-      transition: transform 0.2s;
-    }
-
-    .alarm-status-link:active {
-      transform: scale(0.98);
-    }
-
-    .alarm-status {
-      cursor: pointer;
-    }
-
-    .alarm-status:hover {
-      background: #f8fafc;
-    }
-
-    .section-title {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.75rem;
-      text-align: center;
-    }
-
-    .alarm-info {
-      text-align: center;
-    }
-
-    .no-alarm {
-      color: var(--color-text-secondary);
-      font-size: 0.875rem;
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    .alarm-details {
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: white;
+      position: relative;
+    }
+
+    /* ホーム画面 */
+    .home-screen {
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
-      font-size: 0.875rem;
+      min-height: 100vh;
     }
 
-    .alarm-item {
+    .weather-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .weather-info {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.4rem 0.75rem;
-      background: var(--color-background);
-      border-radius: 6px;
     }
 
-    .alarm-label {
-      font-weight: 600;
-      color: var(--color-text-secondary);
-      font-size: 0.8rem;
+    .weather-icon {
+      font-size: 48px;
+    }
+
+    .temp-info {
+      text-align: right;
+    }
+
+    .current-temp {
+      font-size: 36px;
+      font-weight: bold;
+    }
+
+    .temp-range {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .clock-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .date-display {
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .time-display {
+      font-size: 64px;
+      font-weight: bold;
+      color: #333;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .alarm-status {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      text-align: center;
+      width: 100%;
     }
 
     .alarm-time {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--color-primary);
-    }
-
-    /* 3段目: カウントダウン */
-    .countdown-card {
-      background: linear-gradient(135deg, var(--color-secondary) 0%, #059669 100%);
-      color: white;
+      font-size: 32px;
+      font-weight: bold;
+      color: #667eea;
     }
 
     .countdown-display {
+      margin-top: 20px;
+      padding: 30px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      border-radius: 15px;
       text-align: center;
     }
 
     .countdown-time {
-      font-size: 3rem;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      line-height: 1;
+      font-size: 48px;
+      font-weight: bold;
     }
 
-    /* 4段目: 天気 */
-    .weather-info {
+    .advice-section {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .advice-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #667eea;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 480px;
+      width: 100%;
+      background: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-around;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    }
+
+    .nav-icon {
+      font-size: 32px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .nav-icon:active {
+      transform: scale(0.9);
+    }
+
+    /* 設定画面 */
+    .settings-screen {
+      display: none;
+      padding: 20px;
+      padding-bottom: 80px;
+    }
+
+    .settings-screen.active {
+      display: block;
+    }
+
+    .settings-header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      min-height: 60px;
+      margin-bottom: 30px;
+      padding: 10px 0;
+      border-bottom: 2px solid #667eea;
     }
 
-    .loading {
-      color: var(--color-text-secondary);
+    .back-button {
+      font-size: 24px;
+      cursor: pointer;
+      margin-right: 15px;
+    }
+
+    .settings-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .alarm-list {
+      margin-bottom: 20px;
+    }
+
+    .alarm-item {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .alarm-info {
+      flex: 1;
+    }
+
+    .alarm-label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .alarm-time-small {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .alarm-repeat {
+      font-size: 12px;
+      color: #999;
+      margin-top: 5px;
+    }
+
+    .alarm-toggle {
+      width: 50px;
+      height: 28px;
+      background: #ddd;
+      border-radius: 14px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .alarm-toggle.active {
+      background: #667eea;
+    }
+
+    .alarm-toggle::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: left 0.3s;
+    }
+
+    .alarm-toggle.active::after {
+      left: 24px;
+    }
+
+    .add-alarm-button {
+      width: 100%;
+      padding: 15px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* アラーム編集画面 */
+    .alarm-edit-screen {
+      display: none;
+      padding: 20px;
+      padding-bottom: 80px;
+    }
+
+    .alarm-edit-screen.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #667eea;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .time-picker {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      font-size: 48px;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+
+    .time-input {
+      width: 80px;
       text-align: center;
-      width: 100%;
+      font-size: 48px;
+      border: none;
+      border-bottom: 3px solid #667eea;
+      font-weight: bold;
     }
 
-    .weather-display {
+    .time-input:focus {
+      outline: none;
+      border-bottom-color: #764ba2;
+    }
+
+    .alarm-type-selector {
       display: flex;
-      align-items: center;
-      gap: 1rem;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .type-button {
+      flex: 1;
+      padding: 12px;
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+
+    .type-button.active {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .countdown-options {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .countdown-option {
+      padding: 10px;
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .countdown-option.selected {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .repeat-options {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .repeat-day {
+      padding: 12px 8px;
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+
+    .repeat-day.selected {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .save-button {
       width: 100%;
+      padding: 15px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    .delete-button {
+      width: 100%;
+      padding: 15px;
+      background: #f5576c;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .music-upload {
+      margin-top: 10px;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .upload-button {
+      width: 100%;
+      padding: 12px;
+      background: #f8f9fa;
+      border: 2px dashed #667eea;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      color: #667eea;
+      font-weight: bold;
+    }
+
+    .selected-file {
+      margin-top: 10px;
+      padding: 10px;
+      background: #e8f4f8;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .snooze-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .snooze-option {
+      padding: 12px;
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .snooze-option.selected {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    /* アラーム鳴動画面 */
+    .alarm-ringing-screen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      z-index: 1000;
+      flex-direction: column;
       justify-content: center;
+      align-items: center;
+      padding: 20px;
     }
 
-    .weather-icon {
-      font-size: 2.5rem;
+    .alarm-ringing-screen.active {
+      display: flex;
     }
 
-    .weather-details {
-      text-align: left;
+    .ringing-time {
+      font-size: 72px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 20px;
     }
 
-    .weather-condition {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.25rem;
+    .ringing-label {
+      font-size: 24px;
+      color: white;
+      margin-bottom: 40px;
     }
 
-    .weather-temp {
-      font-size: 0.875rem;
-      color: var(--color-text-secondary);
+    .stop-button {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: white;
+      border: none;
+      font-size: 24px;
+      font-weight: bold;
+      color: #f5576c;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
     }
 
-    .location-selector {
-      margin-top: 0.75rem;
+    .stop-button:active {
+      transform: scale(0.95);
     }
 
-    .location-select {
-      width: 100%;
-      padding: 0.5rem;
-      border: 1px solid var(--color-border);
-      border-radius: 6px;
-      font-size: 0.875rem;
+    .snooze-button {
+      margin-top: 20px;
+      padding: 15px 40px;
+      background: rgba(255,255,255,0.3);
+      color: white;
+      border: 2px solid white;
+      border-radius: 25px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
     }
 
-    @media (max-width: 640px) {
-      .home-container {
-        gap: 0.5rem;
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
       }
-
-      .card {
-        padding: 0.75rem;
+      50% {
+        transform: scale(1.05);
       }
+    }
 
-      .time-hm {
-        font-size: 2.5rem;
-      }
-
-      .time-s {
-        font-size: 1.25rem;
-      }
-
-      .countdown-time {
-        font-size: 2.5rem;
-      }
-
-      .section-title {
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-      }
+    .pulse {
+      animation: pulse 1s infinite;
     }
   </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- ホーム画面 -->
+    <div class="home-screen" id="homeScreen">
+      <div class="weather-section">
+        <div class="weather-info">
+          <div>
+            <div id="locationName">位置情報取得中...</div>
+            <div class="weather-icon" id="weatherIcon">☀️</div>
+          </div>
+          <div class="temp-info">
+            <div class="current-temp"><span id="currentTemp">--</span>°C</div>
+            <div class="temp-range">
+              <span id="maxTemp">--</span>° / <span id="minTemp">--</span>°
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="clock-section">
+        <div class="date-display" id="dateDisplay">----年--月--日 (--)</div>
+        <div class="time-display" id="timeDisplay">--:--:--</div>
+
+        <div class="alarm-status" id="alarmStatus">
+          <div>アラーム未設定</div>
+        </div>
+
+        <div class="countdown-display hidden" id="countdownDisplay">
+          <div>出発まで</div>
+          <div class="countdown-time" id="countdownTime">--:--</div>
+        </div>
+      </div>
+
+      <div class="advice-section">
+        <div class="advice-title">☂️ 傘の必要性</div>
+        <div id="umbrellaAdvice">--</div>
+      </div>
+
+      <div class="advice-section">
+        <div class="advice-title">👔 服装のアドバイス</div>
+        <div id="clothingAdvice">--</div>
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-icon" onclick="showSettings()">⚙️</div>
+        <div class="nav-icon" onclick="showHome()">🏠</div>
+        <div class="nav-icon" onclick="addNewAlarm()">➕</div>
+      </div>
+    </div>
+
+    <!-- 設定画面 -->
+    <div class="settings-screen" id="settingsScreen">
+      <div class="settings-header">
+        <div class="back-button" onclick="showHome()">←</div>
+        <div class="settings-title">アラーム設定</div>
+      </div>
+
+      <div class="alarm-list" id="alarmList">
+        <!-- アラーム一覧がここに表示される -->
+      </div>
+
+      <button class="add-alarm-button" onclick="addNewAlarm()">＋ アラームを追加</button>
+    </div>
+
+    <!-- アラーム編集画面 -->
+    <div class="alarm-edit-screen" id="alarmEditScreen">
+      <div class="settings-header">
+        <div class="back-button" onclick="showSettings()">←</div>
+        <div class="settings-title" id="editTitle">アラーム追加</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">ラベル</label>
+        <input type="text" class="form-input" id="alarmLabel" placeholder="例：朝の目覚まし">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">種類</label>
+        <div class="alarm-type-selector">
+          <button class="type-button active" id="wakeupButton" onclick="selectAlarmType('wakeup')">お目覚め</button>
+          <button class="type-button" id="departureButton" onclick="selectAlarmType('departure')">お出かけ</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">時刻</label>
+        <div class="time-picker">
+          <input type="number" class="time-input" id="hourInput" min="0" max="23" value="07" />
+          <span>:</span>
+          <input type="number" class="time-input" id="minuteInput" min="0" max="59" value="00" />
+        </div>
+      </div>
+
+      <div class="form-group" id="snoozeGroup">
+        <label class="form-label">スヌーズ</label>
+        <div class="snooze-options">
+          <div class="snooze-option selected" data-value="0">なし</div>
+          <div class="snooze-option" data-value="1">1分</div>
+          <div class="snooze-option" data-value="3">3分</div>
+          <div class="snooze-option" data-value="5">5分</div>
+          <div class="snooze-option" data-value="9">9分</div>
+        </div>
+      </div>
+
+      <div class="form-group hidden" id="countdownGroup">
+        <label class="form-label">カウントダウン通知</label>
+        <div class="countdown-options">
+          <div class="countdown-option" data-value="60">60分</div>
+          <div class="countdown-option" data-value="50">50分</div>
+          <div class="countdown-option" data-value="40">40分</div>
+          <div class="countdown-option" data-value="30">30分</div>
+          <div class="countdown-option" data-value="20">20分</div>
+          <div class="countdown-option" data-value="10">10分</div>
+          <div class="countdown-option" data-value="5">5分</div>
+          <div class="countdown-option" data-value="3">3分</div>
+          <div class="countdown-option" data-value="1">1分</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">繰り返し</label>
+        <div class="repeat-options">
+          <div class="repeat-day" data-day="1">月</div>
+          <div class="repeat-day" data-day="2">火</div>
+          <div class="repeat-day" data-day="3">水</div>
+          <div class="repeat-day" data-day="4">木</div>
+          <div class="repeat-day" data-day="5">金</div>
+          <div class="repeat-day" data-day="6">土</div>
+          <div class="repeat-day" data-day="0">日</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">音楽</label>
+        <div class="music-upload">
+          <label for="musicFile" class="upload-button">
+            🎵 音楽ファイルを選択
+          </label>
+          <input type="file" id="musicFile" class="file-input" accept="audio/*" onchange="handleMusicUpload(event)">
+          <div id="selectedFileName" class="selected-file hidden"></div>
+        </div>
+      </div>
+
+      <button class="save-button" onclick="saveAlarm()">保存</button>
+      <button class="delete-button hidden" id="deleteButton" onclick="deleteAlarm()">削除</button>
+    </div>
+
+    <!-- アラーム鳴動画面 -->
+    <div class="alarm-ringing-screen" id="alarmRingingScreen">
+      <div class="ringing-time" id="ringingTime">07:00</div>
+      <div class="ringing-label" id="ringingLabel">お目覚めの時間です</div>
+      <button class="stop-button pulse" onclick="stopAlarm()">停止</button>
+      <button class="snooze-button hidden" id="snoozeButtonRinging" onclick="snoozeAlarm()">スヌーズ</button>
+    </div>
+  </div>
 
   <script>
-    import type { AlarmPattern, WeatherData } from '../types';
-
-    const WEEKDAY_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    // 現在時刻の更新
-    function updateDateTime() {
-      const now = new Date();
-      const dateEl = document.getElementById('current-date');
-      const timeHmEl = document.getElementById('current-time-hm');
-      const timeSEl = document.getElementById('current-time-s');
-      
-      if (dateEl) {
-        const year = now.getFullYear();
-        const month = now.getMonth() + 1;
-        const day = now.getDate();
-        const weekday = WEEKDAY_EN[now.getDay()];
-        dateEl.textContent = `${year}年${month}月${day}日 (${weekday})`;
-      }
-      
-      if (timeHmEl && timeSEl) {
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        timeHmEl.textContent = `${hours}:${minutes}`;
-        timeSEl.textContent = `:${seconds}`;
-      }
-    }
-
-    // アラーム情報の表示
-    function displayAlarmInfo() {
-      const alarmInfoEl = document.getElementById('alarm-info');
-      if (!alarmInfoEl) return;
-
-      const stored = localStorage.getItem('alarmPatterns');
-      if (!stored) {
-        alarmInfoEl.innerHTML = '<p class="no-alarm">未設定</p>';
-        return;
-      }
-
-      const patterns: AlarmPattern[] = JSON.parse(stored);
-      const activePattern = patterns.find(p => p.isActive);
-
-      if (!activePattern) {
-        alarmInfoEl.innerHTML = '<p class="no-alarm">未設定</p>';
-        return;
-      }
-
-      const wakeTimeDisplay = activePattern.wakeUpTime || 'OFF';
-      
-      alarmInfoEl.innerHTML = `
-        <div class="alarm-details">
-          <div class="alarm-item">
-            <span class="alarm-label">パターン</span>
-            <span>${activePattern.label}</span>
-          </div>
-          <div class="alarm-item">
-            <span class="alarm-label">めざまし</span>
-            <span class="alarm-time">${wakeTimeDisplay}</span>
-          </div>
-          <div class="alarm-item">
-            <span class="alarm-label">おでかけ</span>
-            <span class="alarm-time">${activePattern.departureTime}</span>
-          </div>
-        </div>
-      `;
-
-      updateCountdown(activePattern);
-    }
-
-    // カウントダウンの更新
-    function updateCountdown(pattern: AlarmPattern) {
-      const countdownCard = document.getElementById('countdown-card');
-      const countdownTime = document.getElementById('countdown-time');
-      if (!countdownCard || !countdownTime) return;
-
-      const now = new Date();
-      const [hours, minutes] = pattern.departureTime.split(':').map(Number);
-      const target = new Date(now);
-      target.setHours(hours, minutes, 0, 0);
-
-      // 今日のおでかけ時刻が過ぎていたら翌日に設定
-      if (target.getTime() <= now.getTime()) {
-        target.setDate(target.getDate() + 1);
-      }
-
-      const diff = target.getTime() - now.getTime();
-      const totalSeconds = Math.floor(diff / 1000);
-      
-      // 00:00:00になった瞬間（totalSeconds <= 0）
-      if (totalSeconds <= 0) {
-        countdownTime.textContent = '00:00:00';
-        countdownCard.style.display = 'block';
-        
-        // 通知を1回だけ送る
-        const alreadyNotified = sessionStorage.getItem('departure_notified');
-        if (!alreadyNotified) {
-          checkAndNotify(0);
-          sessionStorage.setItem('departure_notified', 'true');
-        }
-        
-        // アラーム後は非表示にする（翌日の計算は次の更新サイクルで）
-        return;
-      }
-
-      // departure_notifiedフラグをクリア（新しいサイクル用）
-      if (totalSeconds > 60) {
-        sessionStorage.removeItem('departure_notified');
-      }
-
-      const hours_left = Math.floor(diff / (1000 * 60 * 60));
-      const minutes_left = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds_left = Math.floor((diff % (1000 * 60)) / 1000);
-
-      countdownTime.textContent = `${String(hours_left).padStart(2, '0')}:${String(minutes_left).padStart(2, '0')}:${String(seconds_left).padStart(2, '0')}`;
-      countdownCard.style.display = 'block';
-
-      // 通知チェック（正確なタイミング）
-      pattern.notificationIntervals.forEach(interval => {
-        const targetSeconds = interval * 60;
-        // targetSecondsちょうど、またはtargetSeconds-1秒の時に通知
-        if (totalSeconds === targetSeconds || totalSeconds === targetSeconds - 1) {
-          checkAndNotify(interval);
-        }
-      });
-    }
-
-    // 通知処理
-    function checkAndNotify(minutesLeft: number) {
-      const lastNotified = sessionStorage.getItem(`notified_${minutesLeft}`);
-      if (lastNotified) return;
-
-      sessionStorage.setItem(`notified_${minutesLeft}`, 'true');
-
-      const settings = JSON.parse(localStorage.getItem('settings') || '{"soundEnabled":true}');
-
-      if (minutesLeft === 0) {
-        // おでかけ時刻: 音楽を再生
-        playAlarmMusic();
-
-        // 音声通知（iOSでも動作するように）
-        if (settings.soundEnabled && 'speechSynthesis' in window) {
-          // 既存の音声を停止
-          speechSynthesis.cancel();
-          
-          const utterance = new SpeechSynthesisUtterance('おでかけの時間です！いってらっしゃい！');
-          utterance.lang = 'ja-JP';
-          utterance.volume = 1.0;
-          utterance.rate = 1.0;
-          utterance.pitch = 1.0;
-          
-          // 少し遅延させて確実に再生
-          setTimeout(() => {
-            speechSynthesis.speak(utterance);
-          }, 100);
-        }
-
-        // ビジュアルアラート
-        showVisualAlert('🚶 おでかけの時間です！', 'いってらっしゃい！');
-      } else {
-        // カウントダウン通知
-        if (settings.soundEnabled && 'speechSynthesis' in window) {
-          // 既存の音声を停止
-          speechSynthesis.cancel();
-          
-          const utterance = new SpeechSynthesisUtterance(`おでかけ${minutesLeft}分前です`);
-          utterance.lang = 'ja-JP';
-          utterance.volume = 1.0;
-          utterance.rate = 1.0;
-          utterance.pitch = 1.0;
-          
-          // 少し遅延させて確実に再生
-          setTimeout(() => {
-            speechSynthesis.speak(utterance);
-          }, 100);
-        }
-
-        // ビジュアルアラート（3秒で自動消去）
-        showVisualAlert('⏰ カウントダウン', `おでかけ${minutesLeft}分前です`, 3000);
-      }
-    }
-
-    // アラーム音楽の再生
-    function playAlarmMusic() {
-      // 既存の音楽を停止
-      if ((window as any).currentAlarmAudio) {
-        (window as any).currentAlarmAudio.pause();
-        (window as any).currentAlarmAudio.currentTime = 0;
-      }
-
-      const audio = new Audio('/sounds/alarm.mp3');
-      
-      // iOSでの再生を試みる
-      audio.load();
-      
-      const tryPlay = () => {
-        audio.play()
-          .then(() => {
-            console.log('音楽再生開始');
-          })
-          .catch(error => {
-            console.log('音楽の自動再生が制限されています:', error);
-            // フォールバック: ビープ音
-            playBeepSound();
-          });
-      };
-
-      audio.addEventListener('canplaythrough', tryPlay, { once: true });
-      
-      audio.addEventListener('error', (e) => {
-        console.log('音楽ファイルが見つかりません');
-        playBeepSound();
-      });
-
-      // 音量設定
-      audio.volume = 0.7;
-      
-      // ループ再生
-      audio.loop = true;
-
-      // 30秒後に自動停止
-      setTimeout(() => {
-        audio.pause();
-        audio.currentTime = 0;
-      }, 30000);
-
-      // グローバルに保存
-      (window as any).currentAlarmAudio = audio;
-    }
-
-    // ビープ音を鳴らす（音楽ファイルがない場合のフォールバック）
-    function playBeepSound() {
-      try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        
-        // 3回ビープ音を鳴らす
-        for (let i = 0; i < 3; i++) {
-          const oscillator = audioContext.createOscillator();
-          const gainNode = audioContext.createGain();
-
-          oscillator.connect(gainNode);
-          gainNode.connect(audioContext.destination);
-
-          oscillator.frequency.value = 800;
-          oscillator.type = 'sine';
-
-          const startTime = audioContext.currentTime + (i * 0.5);
-          gainNode.gain.setValueAtTime(0.3, startTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
-
-          oscillator.start(startTime);
-          oscillator.stop(startTime + 0.3);
-        }
-      } catch (error) {
-        console.log('ビープ音の再生に失敗:', error);
-      }
-    }
-
-    // ビジュアルアラート表示（iOS用）
-    function showVisualAlert(title: string, message: string, duration: number = 0) {
-      const existing = document.getElementById('visual-alert');
-      if (existing) existing.remove();
-
-      const alert = document.createElement('div');
-      alert.id = 'visual-alert';
-      alert.innerHTML = `
-        <div style="
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: white;
-          padding: 2rem;
-          border-radius: 16px;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-          z-index: 10000;
-          text-align: center;
-          min-width: 280px;
-          max-width: 90vw;
-          animation: slideIn 0.3s ease-out;
-        ">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">${title.split(' ')[0]}</div>
-          <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">${title.split(' ').slice(1).join(' ')}</div>
-          <div style="font-size: 1rem; color: #666;">${message}</div>
-          <button onclick="this.closest('#visual-alert').remove()" style="
-            margin-top: 1.5rem;
-            padding: 0.75rem 2rem;
-            background: var(--color-primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-          ">確認</button>
-        </div>
-        <div onclick="this.closest('#visual-alert').remove()" style="
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0,0,0,0.5);
-          z-index: 9999;
-        "></div>
-        <style>
-          @keyframes slideIn {
-            from {
-              opacity: 0;
-              transform: translate(-50%, -60%);
-            }
-            to {
-              opacity: 1;
-              transform: translate(-50%, -50%);
-            }
-          }
-        </style>
-      `;
-      document.body.appendChild(alert);
-
-      if (duration > 0) {
-        setTimeout(() => {
-          alert.remove();
-        }, duration);
-      }
-    }
-
-    // 天気情報の取得（Open-Meteo）
-    async function fetchWeather() {
-      const weatherInfoEl = document.getElementById('weather-info');
-      const locationSelect = document.getElementById('location-select') as HTMLSelectElement;
-      if (!weatherInfoEl) return;
-
-      try {
-        let lat: number, lon: number;
-
-        if (locationSelect.value === 'gps') {
-          if (!('geolocation' in navigator)) {
-            throw new Error('位置情報が利用できません');
-          }
-
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject);
-          });
-
-          lat = position.coords.latitude;
-          lon = position.coords.longitude;
-        } else {
-          [lat, lon] = locationSelect.value.split(',').map(Number);
-        }
-
-        // Open-Meteo API
-        const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Asia/Tokyo`
-        );
-
-        if (!response.ok) throw new Error('天気情報の取得に失敗しました');
-
-        const data = await response.json();
-        
-        // 天気コードをアイコンに変換
-        const weatherCode = data.current.weather_code;
-        const weatherIcon = getWeatherIcon(weatherCode);
-        const weatherDesc = getWeatherDescription(weatherCode);
-        
-        const currentTemp = Math.round(data.current.temperature_2m);
-        const maxTemp = Math.round(data.daily.temperature_2m_max[0]);
-        const minTemp = Math.round(data.daily.temperature_2m_min[0]);
-
-        weatherInfoEl.innerHTML = `
-          <div class="weather-display">
-            <div class="weather-icon">${weatherIcon}</div>
-            <div class="weather-details">
-              <div class="weather-condition">${weatherDesc}</div>
-              <div class="weather-temp">現在: ${currentTemp}℃</div>
-              <div class="weather-temp">最高: ${maxTemp}℃ / 最低: ${minTemp}℃</div>
-            </div>
-          </div>
-        `;
-      } catch (error) {
-        weatherInfoEl.innerHTML = `
-          <div class="weather-display">
-            <div class="weather-details">
-              <div class="weather-condition">天気情報を取得できませんでした</div>
-            </div>
-          </div>
-        `;
-      }
-    }
-
-    // 天気コードからアイコンを取得
-    function getWeatherIcon(code: number): string {
-      if (code === 0) return '☀️';
-      if (code <= 3) return '⛅';
-      if (code <= 48) return '🌫️';
-      if (code <= 67) return '🌧️';
-      if (code <= 77) return '🌨️';
-      if (code <= 82) return '🌧️';
-      if (code <= 86) return '🌨️';
-      return '⛈️';
-    }
-
-    // 天気コードから説明を取得
-    function getWeatherDescription(code: number): string {
-      if (code === 0) return '快晴';
-      if (code === 1) return '晴れ';
-      if (code === 2) return '一部曇り';
-      if (code === 3) return '曇り';
-      if (code <= 48) return '霧';
-      if (code <= 67) return '雨';
-      if (code <= 77) return '雪';
-      if (code <= 82) return '強い雨';
-      if (code <= 86) return '強い雪';
-      return '雷雨';
-    }
-
-    // 地域選択の変更イベント
-    const locationSelect = document.getElementById('location-select');
-    if (locationSelect) {
-      locationSelect.addEventListener('change', fetchWeather);
-    }
-
-    // iOS用: 音声・音楽の初期化（ユーザータップで有効化）
-    let audioInitialized = false;
-    function initializeAudioForIOS() {
-      if (audioInitialized) return;
-      
-      // 音声合成のウォームアップ
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance('');
-        utterance.volume = 0;
-        speechSynthesis.speak(utterance);
-      }
-      
-      // オーディオコンテキストのウォームアップ
-      try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        audioContext.resume();
-      } catch (e) {
-        console.log('AudioContext初期化:', e);
-      }
-      
-      audioInitialized = true;
-      console.log('音声・音楽が有効化されました');
-    }
-
-    // 画面タップで音声を有効化（iOS対応）
-    document.body.addEventListener('touchstart', initializeAudioForIOS, { once: true });
-    document.body.addEventListener('click', initializeAudioForIOS, { once: true });
+    // グローバル変数
+    let alarms = [];
+    let currentAlarmId = null;
+    let currentAlarmType = 'wakeup';
+    let selectedCountdowns = [];
+    let selectedRepeatDays = [];
+    let selectedSnooze = 0;
+    let currentMusicFile = null;
+    let alarmAudio = null;
+    let weatherData = null;
+    let checkInterval = null;
+    let countdownInterval = null;
+    let activeAlarm = null;
 
     // 初期化
-    updateDateTime();
-    displayAlarmInfo();
-    fetchWeather();
+    document.addEventListener('DOMContentLoaded', () => {
+      loadAlarms();
+      startClock();
+      getWeatherData();
+      startAlarmChecker();
+      requestNotificationPermission();
+      
+      // イベントリスナー設定
+      setupEventListeners();
+    });
 
-    // 通知許可をリクエスト
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
+    function setupEventListeners() {
+      // カウントダウンオプション
+      document.querySelectorAll('.countdown-option').forEach(option => {
+        option.addEventListener('click', () => {
+          option.classList.toggle('selected');
+          const value = parseInt(option.dataset.value);
+          if (selectedCountdowns.includes(value)) {
+            selectedCountdowns = selectedCountdowns.filter(v => v !== value);
+          } else {
+            selectedCountdowns.push(value);
+          }
+        });
+      });
+
+      // 繰り返し日選択
+      document.querySelectorAll('.repeat-day').forEach(day => {
+        day.addEventListener('click', () => {
+          day.classList.toggle('selected');
+          const dayValue = parseInt(day.dataset.day);
+          if (selectedRepeatDays.includes(dayValue)) {
+            selectedRepeatDays = selectedRepeatDays.filter(d => d !== dayValue);
+          } else {
+            selectedRepeatDays.push(dayValue);
+          }
+        });
+      });
+
+      // スヌーズオプション
+      document.querySelectorAll('.snooze-option').forEach(option => {
+        option.addEventListener('click', () => {
+          document.querySelectorAll('.snooze-option').forEach(o => o.classList.remove('selected'));
+          option.classList.add('selected');
+          selectedSnooze = parseInt(option.dataset.value);
+        });
+      });
     }
 
-    // 定期更新
-    setInterval(() => {
-      updateDateTime();
-      const stored = localStorage.getItem('alarmPatterns');
-      if (stored) {
-        const patterns: AlarmPattern[] = JSON.parse(stored);
-        const activePattern = patterns.find(p => p.isActive);
-        if (activePattern) {
-          updateCountdown(activePattern);
+    // 時計表示
+    function startClock() {
+      updateClock();
+      setInterval(updateClock, 1000);
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      
+      document.getElementById('timeDisplay').textContent = `${hours}:${minutes}:${seconds}`;
+      
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const date = now.getDate();
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      const day = days[now.getDay()];
+      
+      document.getElementById('dateDisplay').textContent = `${year}年${month}月${date}日 (${day})`;
+    }
+
+    // 天気情報取得
+    async function getWeatherData() {
+      if (!navigator.geolocation) {
+        document.getElementById('locationName').textContent = '位置情報が利用できません';
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        
+        // OpenWeatherMap APIキーを設定してください
+        const apiKey = 'AIzaSyBxL_W0AqcoUWRoIF-vfjDxc-bo7qdVGmM';
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=ja&appid=${apiKey}`;
+        
+        try {
+          const response = await fetch(url);
+          weatherData = await response.json();
+          updateWeatherDisplay();
+        } catch (error) {
+          console.error('天気情報の取得に失敗:', error);
+          document.getElementById('locationName').textContent = '天気情報取得エラー';
+        }
+      }, (error) => {
+        document.getElementById('locationName').textContent = '位置情報の取得に失敗';
+      });
+    }
+
+    function updateWeatherDisplay() {
+      if (!weatherData) return;
+
+      document.getElementById('locationName').textContent = weatherData.name || '現在地';
+      document.getElementById('currentTemp').textContent = Math.round(weatherData.main.temp);
+      document.getElementById('maxTemp').textContent = Math.round(weatherData.main.temp_max);
+      document.getElementById('minTemp').textContent = Math.round(weatherData.main.temp_min);
+
+      // 天気アイコン
+      const weatherIcons = {
+        'Clear': '☀️',
+        'Clouds': '☁️',
+        'Rain': '🌧️',
+        'Drizzle': '🌦️',
+        'Thunderstorm': '⛈️',
+        'Snow': '❄️',
+        'Mist': '🌫️',
+        'Fog': '🌫️'
+      };
+      document.getElementById('weatherIcon').textContent = weatherIcons[weatherData.weather[0].main] || '🌤️';
+
+      // 傘のアドバイス
+      const needUmbrella = ['Rain', 'Drizzle', 'Thunderstorm'].includes(weatherData.weather[0].main);
+      document.getElementById('umbrellaAdvice').textContent = needUmbrella ? '傘を持っていきましょう' : '傘は不要です';
+
+      // 服装のアドバイス
+      const temp = weatherData.main.temp;
+      let advice = '';
+      if (temp < 10) advice = '厚手のコートが必要です';
+      else if (temp < 15) advice = 'ジャケットがあると良いでしょう';
+      else if (temp < 20) advice = '長袖がおすすめです';
+      else if (temp < 25) advice = '快適な気温です';
+      else advice = '薄着で大丈夫です';
+      
+      document.getElementById('clothingAdvice').textContent = advice;
+    }
+
+    // 画面切り替え
+    function showHome() {
+      document.getElementById('homeScreen').style.display = 'flex';
+      document.getElementById('settingsScreen').classList.remove('active');
+      document.getElementById('alarmEditScreen').classList.remove('active');
+    }
+
+    function showSettings() {
+      document.getElementById('homeScreen').style.display = 'none';
+      document.getElementById('settingsScreen').classList.add('active');
+      renderAlarmList();
+    }
+
+    // アラーム管理
+    function loadAlarms() {
+      const saved = localStorage.getItem('alarms');
+      alarms = saved ? JSON.parse(saved) : [];
+      updateHomeAlarmStatus();
+    }
+
+    function saveAlarmsToStorage() {
+      localStorage.setItem('alarms', JSON.stringify(alarms));
+      updateHomeAlarmStatus();
+    }
+
+    function renderAlarmList() {
+      const list = document.getElementById('alarmList');
+      list.innerHTML = '';
+
+      alarms.forEach(alarm => {
+        const item = document.createElement('div');
+        item.className = 'alarm-item';
+        item.innerHTML = `
+          <div class="alarm-info" onclick="editAlarm('${alarm.id}')">
+            <div class="alarm-label">${alarm.label}</div>
+            <div class="alarm-time-small">${alarm.time}</div>
+            <div class="alarm-repeat">${getRepeatText(alarm.repeatDays)}</div>
+          </div>
+          <div class="alarm-toggle ${alarm.enabled ? 'active' : ''}" onclick="toggleAlarm('${alarm.id}')"></div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function getRepeatText(days) {
+      if (!days || days.length === 0) return '繰り返しなし';
+      if (days.length === 7) return '毎日';
+      const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+      return days.map(d => dayNames[d]).join(', ');
+    }
+
+    function addNewAlarm() {
+      currentAlarmId = null;
+      currentAlarmType = 'wakeup';
+      selectedCountdowns = [];
+      selectedRepeatDays = [];
+      selectedSnooze = 0;
+      currentMusicFile = null;
+
+      document.getElementById('editTitle').textContent = 'アラーム追加';
+      document.getElementById('alarmLabel').value = '';
+      document.getElementById('hourInput').value = '07';
+      document.getElementById('minuteInput').value = '00';
+      document.getElementById('deleteButton').classList.add('hidden');
+      document.getElementById('selectedFileName').classList.add('hidden');
+
+      selectAlarmType('wakeup');
+      document.querySelectorAll('.countdown-option').forEach(o => o.classList.remove('selected'));
+      document.querySelectorAll('.repeat-day').forEach(d => d.classList.remove('selected'));
+      document.querySelectorAll('.snooze-option').forEach(o => o.classList.remove('selected'));
+      document.querySelector('.snooze-option[data-value="0"]').classList.add('selected');
+
+      document.getElementById('homeScreen').style.display = 'none';
+      document.getElementById('settingsScreen').classList.remove('active');
+      document.getElementById('alarmEditScreen').classList.add('active');
+    }
+
+    function editAlarm(id) {
+      const alarm = alarms.find(a => a.id === id);
+      if (!alarm) return;
+
+      currentAlarmId = id;
+      currentAlarmType = alarm.type;
+      selectedCountdowns = alarm.countdowns || [];
+      selectedRepeatDays = alarm.repeatDays || [];
+      selectedSnooze = alarm.snooze || 0;
+      currentMusicFile = alarm.musicFile || null;
+
+      document.getElementById('editTitle').textContent = 'アラーム編集';
+      document.getElementById('alarmLabel').value = alarm.label;
+      const [hours, minutes] = alarm.time.split(':');
+      document.getElementById('hourInput').value = hours;
+      document.getElementById('minuteInput').value = minutes;
+      document.getElementById('deleteButton').classList.remove('hidden');
+
+      if (currentMusicFile) {
+        document.getElementById('selectedFileName').textContent = `選択中: ${currentMusicFile.name}`;
+        document.getElementById('selectedFileName').classList.remove('hidden');
+      }
+
+      selectAlarmType(alarm.type);
+
+      document.querySelectorAll('.countdown-option').forEach(option => {
+        const value = parseInt(option.dataset.value);
+        if (selectedCountdowns.includes(value)) {
+          option.classList.add('selected');
+        } else {
+          option.classList.remove('selected');
+        }
+      });
+
+      document.querySelectorAll('.repeat-day').forEach(day => {
+        const dayValue = parseInt(day.dataset.day);
+        if (selectedRepeatDays.includes(dayValue)) {
+          day.classList.add('selected');
+        } else {
+          day.classList.remove('selected');
+        }
+      });
+
+      document.querySelectorAll('.snooze-option').forEach(option => {
+        const value = parseInt(option.dataset.value);
+        if (value === selectedSnooze) {
+          option.classList.add('selected');
+        } else {
+          option.classList.remove('selected');
+        }
+      });
+
+      document.getElementById('settingsScreen').classList.remove('active');
+      document.getElementById('alarmEditScreen').classList.add('active');
+    }
+
+    function selectAlarmType(type) {
+      currentAlarmType = type;
+      
+      if (type === 'wakeup') {
+        document.getElementById('wakeupButton').classList.add('active');
+        document.getElementById('departureButton').classList.remove('active');
+        document.getElementById('snoozeGroup').classList.remove('hidden');
+        document.getElementById('countdownGroup').classList.add('hidden');
+      } else {
+        document.getElementById('wakeupButton').classList.remove('active');
+        document.getElementById('departureButton').classList.add('active');
+        document.getElementById('snoozeGroup').classList.add('hidden');
+        document.getElementById('countdownGroup').classList.remove('hidden');
+      }
+    }
+
+    function handleMusicUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        currentMusicFile = {
+          name: file.name,
+          data: e.target.result
+        };
+        document.getElementById('selectedFileName').textContent = `選択中: ${file.name}`;
+        document.getElementById('selectedFileName').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveAlarm() {
+      const label = document.getElementById('alarmLabel').value || 'アラーム';
+      const hours = String(document.getElementById('hourInput').value).padStart(2, '0');
+      const minutes = String(document.getElementById('minuteInput').value).padStart(2, '0');
+      const time = `${hours}:${minutes}`;
+
+      const alarm = {
+        id: currentAlarmId || Date.now().toString(),
+        label,
+        time,
+        type: currentAlarmType,
+        enabled: true,
+        repeatDays: selectedRepeatDays,
+        countdowns: currentAlarmType === 'departure' ? selectedCountdowns : [],
+        snooze: currentAlarmType === 'wakeup' ? selectedSnooze : 0,
+        musicFile: currentMusicFile
+      };
+
+      if (currentAlarmId) {
+        const index = alarms.findIndex(a => a.id === currentAlarmId);
+        alarms[index] = alarm;
+      } else {
+        alarms.push(alarm);
+      }
+
+      saveAlarmsToStorage();
+      showSettings();
+    }
+
+    function deleteAlarm() {
+      if (!currentAlarmId) return;
+      
+      if (confirm('このアラームを削除しますか？')) {
+        alarms = alarms.filter(a => a.id !== currentAlarmId);
+        saveAlarmsToStorage();
+        showSettings();
+      }
+    }
+
+    function toggleAlarm(id) {
+      const alarm = alarms.find(a => a.id === id);
+      if (alarm) {
+        alarm.enabled = !alarm.enabled;
+        saveAlarmsToStorage();
+        renderAlarmList();
+      }
+    }
+
+    function updateHomeAlarmStatus() {
+      const enabledAlarms = alarms.filter(a => a.enabled);
+      const statusDiv = document.getElementById('alarmStatus');
+      
+      if (enabledAlarms.length === 0) {
+        statusDiv.innerHTML = '<div>アラーム未設定</div>';
+        document.getElementById('countdownDisplay').classList.add('hidden');
+        return;
+      }
+
+      const nextAlarm = getNextAlarm();
+      if (nextAlarm) {
+        statusDiv.innerHTML = `
+          <div style="color: #999; font-size: 14px;">${nextAlarm.label}</div>
+          <div class="alarm-time">${nextAlarm.time}</div>
+        `;
+        
+        if (nextAlarm.type === 'departure') {
+          updateCountdown(nextAlarm);
+        } else {
+          document.getElementById('countdownDisplay').classList.add('hidden');
         }
       }
-    }, 1000);
+    }
+
+    function getNextAlarm() {
+      const now = new Date();
+      const enabledAlarms = alarms.filter(a => a.enabled);
+      
+      if (enabledAlarms.length === 0) return null;
+
+      let nextAlarm = null;
+      let minDiff = Infinity;
+
+      enabledAlarms.forEach(alarm => {
+        const [hours, minutes] = alarm.time.split(':').map(Number);
+        const alarmTime = new Date();
+        alarmTime.setHours(hours, minutes, 0, 0);
+
+        if (alarmTime <= now) {
+          alarmTime.setDate(alarmTime.getDate() + 1);
+        }
+
+        const diff = alarmTime - now;
+        if (diff < minDiff) {
+          minDiff = diff;
+          nextAlarm = alarm;
+        }
+      });
+
+      return nextAlarm;
+    }
+
+    function updateCountdown(alarm) {
+      const now = new Date();
+      const [hours, minutes] = alarm.time.split(':').map(Number);
+      const alarmTime = new Date();
+      alarmTime.setHours(hours, minutes, 0, 0);
+
+      if (alarmTime <= now) {
+        alarmTime.setDate(alarmTime.getDate() + 1);
+      }
+
+      const diff = Math.floor((alarmTime - now) / 1000 / 60);
+
+      if (diff <= 60) {
+        document.getElementById('countdownDisplay').classList.remove('hidden');
+        const displayHours = Math.floor(diff / 60);
+        const displayMinutes = diff % 60;
+        document.getElementById('countdownTime').textContent = 
+          `${String(displayHours).padStart(2, '0')}:${String(displayMinutes).padStart(2, '0')}`;
+      } else {
+        document.getElementById('countdownDisplay').classList.add('hidden');
+      }
+    }
+
+    // アラームチェック
+    function startAlarmChecker() {
+      checkInterval = setInterval(checkAlarms, 1000);
+    }
+
+    function checkAlarms() {
+      const now = new Date();
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const currentDay = now.getDay();
+
+      alarms.forEach(alarm => {
+        if (!alarm.enabled) return;
+
+        if (alarm.repeatDays.length > 0 && !alarm.repeatDays.includes(currentDay)) {
+          return;
+        }
+
+        if (alarm.time === currentTime && now.getSeconds() === 0) {
+          if (alarm.type === 'departure') {
+            startDepartureCountdown(alarm);
+          } else {
+            triggerAlarm(alarm);
+          }
+        }
+      });
+    }
+
+    function startDepartureCountdown(alarm) {
+      if (!alarm.countdowns || alarm.countdowns.length === 0) {
+        triggerAlarm(alarm);
+        return;
+      }
+
+      const [hours, minutes] = alarm.time.split(':').map(Number);
+      const departureTime = new Date();
+      departureTime.setHours(hours, minutes, 0, 0);
+
+      alarm.countdowns.sort((a, b) => b - a).forEach(countdown => {
+        const notifyTime = new Date(departureTime - countdown * 60 * 1000);
+        const delay = notifyTime - new Date();
+
+        if (delay > 0) {
+          setTimeout(() => {
+            showNotification(`出発まであと${countdown}分`, alarm.label);
+            speakText(`出発まであと${countdown}分です`);
+          }, delay);
+        }
+      });
+
+      const delay = departureTime - new Date();
+      setTimeout(() => {
+        triggerAlarm(alarm);
+      }, delay);
+    }
+
+    function triggerAlarm(alarm) {
+      activeAlarm = alarm;
+      document.getElementById('ringingTime').textContent = alarm.time;
+      document.getElementById('ringingLabel').textContent = alarm.label;
+      
+      if (alarm.type === 'wakeup' && alarm.snooze > 0) {
+        document.getElementById('snoozeButtonRinging').classList.remove('hidden');
+      } else {
+        document.getElementById('snoozeButtonRinging').classList.add('hidden');
+      }
+
+      document.getElementById('alarmRingingScreen').classList.add('active');
+      playAlarmSound(alarm);
+      showNotification(alarm.label, `${alarm.time} - アラーム`);
+    }
+
+    function playAlarmSound(alarm) {
+      if (alarmAudio) {
+        alarmAudio.pause();
+      }
+
+      if (alarm.musicFile && alarm.musicFile.data) {
+        alarmAudio = new Audio(alarm.musicFile.data);
+      } else {
+        alarmAudio = new Audio('/sounds/alarm.mp3');
+      }
+
+      alarmAudio.loop = true;
+      alarmAudio.play().catch(e => console.error('音声再生エラー:', e));
+    }
+
+    function stopAlarm() {
+      if (alarmAudio) {
+        alarmAudio.pause();
+        alarmAudio = null;
+      }
+      document.getElementById('alarmRingingScreen').classList.remove('active');
+      activeAlarm = null;
+    }
+
+    function snoozeAlarm() {
+      if (!activeAlarm || !activeAlarm.snooze) return;
+
+      stopAlarm();
+      
+      setTimeout(() => {
+        triggerAlarm(activeAlarm);
+      }, activeAlarm.snooze * 60 * 1000);
+    }
+
+    // 通知
+    function requestNotificationPermission() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+
+    function showNotification(title, body) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, { body, icon: '/icon-192.png' });
+      }
+    }
+
+    // 音声アナウンス
+    function speakText(text) {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ja-JP';
+        speechSynthesis.speak(utterance);
+      }
+    }
+
+    // Service Worker登録（PWA対応）
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
+        console.error('Service Worker登録失敗:', err);
+      });
+    }
   </script>
-</Layout>
+</body>
+</html>
