@@ -121,6 +121,10 @@ import Layout from '../layouts/Layout.astro';
     .favorite-item:hover {
       background: #e2e8f0;
     }
+.favorite-item.active-alarm {
+  background: #dbeafe;
+  border: 2px solid var(--color-primary);
+}
 
     .toggle-switch {
       position: relative;
@@ -406,14 +410,16 @@ import Layout from '../layouts/Layout.astro';
           ? `<div class="favorite-repeat">🔁 ${pattern.repeatDays.map(d => WEEKDAYS[d]).join(',')}</div>`
           : '';
         
-        return `
-        <div class="favorite-item">
+        const activeClass = pattern.isActive ? 'active-alarm' : '';
+
+return `
+<div class="favorite-item ${activeClass}">
           <label class="toggle-switch">
             <input type="checkbox" ${pattern.isActive ? 'checked' : ''} data-id="${pattern.id}" class="toggle-active">
             <span class="toggle-slider"></span>
           </label>
           <div class="favorite-label-wrapper">
-            <div class="favorite-label">${pattern.label}</div>
+           <div class="favorite-label">${pattern.label}${pattern.isActive ? ' ✓' : ''}</div>
             ${repeatDisplay}
           </div>
           <span class="favorite-time">🌅${wakeDisplay}</span>
