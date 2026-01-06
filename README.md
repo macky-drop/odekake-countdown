@@ -11,18 +11,18 @@ npm create astro@latest -- --template basics
 Inside of your Astro project, you'll see the following folders and files:
 
 ```text
-/
+odekake-countdown-app/
 ├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
+│   ├── sounds/
+│   │   └── alarm.mp3          # デフォルトのアラーム音
+│   ├── icon-192.png           # PWA用アイコン（192x192）
+│   ├── icon-512.png           # PWA用アイコン（512x512）
+│   ├── manifest.json          # PWAマニフェスト
+│   └── sw.js                  # Service Worker
+├── src/
+│   └── pages/
+│       └── index.astro        # 上記で作成したメインファイル
+├── astro.config.mjs
 └── package.json
 ```
 
